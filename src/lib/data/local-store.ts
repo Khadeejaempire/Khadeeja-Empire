@@ -227,6 +227,29 @@ const storedOrderSchema = z
   })
   .passthrough();
 
+const storedPaymentAttemptSchema = z.object({
+  id: storedId,
+  orderId: storedId,
+  provider: z.literal("payu"),
+  transactionId: z.string().min(1),
+  providerPaymentId: storedNullableString,
+  status: z.enum(["created", "pending", "paid", "failed", "cancelled", "refunded"]),
+  amount: z.number().finite().nonnegative(),
+  currency: z.string().min(1),
+  productInfo: z.string().min(1),
+  customerName: z.string().min(1),
+  customerEmail: z.string().email(),
+  customerPhone: z.string().min(1),
+  couponId: storedNullableString,
+  couponReserved: storedNullableBoolean,
+  reservationExpiresAt: storedTimestamp,
+  failureCode: storedNullableString,
+  failureMessage: storedNullableString,
+  verifiedAt: storedTimestamp,
+  createdAt: storedTimestamp,
+  updatedAt: storedTimestamp,
+}).passthrough();
+
 const storedReviewSchema = z
   .object({
     id: storedId,
@@ -413,6 +436,7 @@ export const adminDataStateSchema = z
     addresses: z.array(storedAddressSchema),
     orders: z.array(storedOrderSchema),
     orderItems: z.array(storedOrderItemSchema),
+    paymentAttempts: z.array(storedPaymentAttemptSchema).default([]),
     reviews: z.array(storedReviewSchema),
     inquiries: z.array(storedInquirySchema),
     subscribers: z.array(storedSubscriberSchema),

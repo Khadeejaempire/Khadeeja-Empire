@@ -11,7 +11,8 @@ function provider(overrides: Partial<DataProvider>): DataProvider {
 const validInput = checkoutInputSchema.parse({
   idempotencyKey: "checkout_attempt_123",
   items: [{ productId: "product-1", quantity: 2, size: "M" }],
-  customer: { name: "Demo Customer", email: "DEMO@example.com" },
+  customer: { name: "Demo Customer", email: "DEMO@example.com", phone: "+919876543210" },
+  paymentMethod: "cod",
   shippingAddress: {
     line1: "1 Demo Road",
     city: "Varanasi",

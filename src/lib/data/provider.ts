@@ -26,6 +26,9 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentAttemptMutationInput,
+  PaymentAttemptRecord,
+  VerifiedPaymentResultInput,
   ProductColorRecord,
   ProductImageRecord,
   ProductInformationRecord,
@@ -128,6 +131,10 @@ export interface DataProvider {
   updateOrderStatus(id: string, status: OrderStatus): Promise<OrderRecord>;
   deleteOrder(id: string): Promise<void>;
   listOrderItems(orderId: string): Promise<OrderItemRecord[]>;
+  createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord>;
+  getPaymentAttemptByTransactionId(transactionId: string): Promise<PaymentAttemptRecord | null>;
+  getLatestPaymentAttemptForOrder(orderId: string): Promise<PaymentAttemptRecord | null>;
+  applyVerifiedPaymentResult(input: VerifiedPaymentResultInput): Promise<PaymentAttemptRecord>;
 
   listReviews(options?: ListOptions): Promise<ReviewRecord[]>;
   getReview(id: string): Promise<ReviewRecord | null>;

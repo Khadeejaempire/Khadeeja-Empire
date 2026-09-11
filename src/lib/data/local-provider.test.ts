@@ -107,4 +107,29 @@ describe("local data provider", () => {
       { id: first.id, label: "Collections" },
     ]);
   });
+
+  it("applies PayU success once and never downgrades it", async () => {
+    const provider = createLocalProvider({ filePath: await createTestFilePath() });
+    const coupon = await provider.createCoupon({
+      code: "PAYU10", discountType: "fixed", discountValue: 10, active: true,
+    });
+    const order = await provider.createOrder({
+      orderNumber: "KE-PAYU-1", status: "pending", paymentStatus: "pending", paymentMethod: "payu",
+      currency: "INR", subtotal: 100, shipping: 0, discount: 10, total: 90, couponCode: coupon.code, items: [],
+    });
+    await provider.createPaymentAttempt({
+      orderId: order.id, provider: "payu", transactionId: "KE-PAYU-1", status: "created",
+      amount: 90, currency: "INR", productInfo: "Order KE-PAYU-1", customerName: "Buyer",
+      customerEmail: "buyer@example.com", customerPhone: "9999999999",
+      couponId: coupon.id,
+    });
+
+    await provider.applyVerifiedPaymentResult({ transactionId: "KE-PAYU-1", status: "paid", providerPaymentId: "PAYU-1" });
+    await provider.applyVerifiedPaymentResult({ transactionId: "KE-PAYU-1", status: "paid", providerPaymentId: "PAYU-1" });
+    await provider.applyVerifiedPaymentResult({ transactionId: "KE-PAYU-1", status: "failed", failureMessage: "late failure" });
+
+    await expect(provider.getOrder(order.id)).resolves.toMatchObject({ status: "confirmed", paymentStatus: "paid" });
+    await expect(provider.getPaymentAttemptByTransactionId("KE-PAYU-1")).resolves.toMatchObject({ status: "paid", providerPaymentId: "PAYU-1" });
+    expect((await provider.listCoupons({ search: "PAYU10" }))[0].usedCount).toBe(1);
+  });
 });

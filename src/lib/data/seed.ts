@@ -107,6 +107,7 @@ export function createSeedData(): AdminDataState {
     addresses: [],
     orders: [],
     orderItems: [],
+    paymentAttempts: [],
     reviews: [],
     inquiries: [],
     subscribers: [],

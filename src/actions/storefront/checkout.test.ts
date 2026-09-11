@@ -2,9 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUserMock, getDataProviderMock } = vi.hoisted(() => ({
+const { getUserMock, getDataProviderMock, buildHostedCheckoutMock } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
   getDataProviderMock: vi.fn(),
+  buildHostedCheckoutMock: vi.fn(() => ({ actionUrl: "https://test.payu.in/_payment", fields: { txnid: "KE-TEST", hash: "hash" } })),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -12,6 +13,7 @@ vi.mock("../../lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(async () => ({ auth: { getUser: getUserMock } })),
 }));
 vi.mock("../../lib/data", () => ({ getDataProvider: getDataProviderMock }));
+vi.mock("../../lib/payu/payment", () => ({ buildHostedCheckout: buildHostedCheckoutMock }));
 
 import { placeOrder, previewCouponAction } from "./checkout";
 
@@ -20,7 +22,8 @@ const loggedInCustomer = { id: "customer-1", email: "demo@example.com", phone: "
 const input = {
   idempotencyKey: "checkout_attempt_123",
   items: [{ productId: "product-1", quantity: 1, size: "M" }],
-  customer: { name: "Demo Customer", email: "demo@example.com" },
+  customer: { name: "Demo Customer", email: "demo@example.com", phone: "+919876543210" },
+  paymentMethod: "cod" as const,
   shippingAddress: {
     line1: "1 Demo Road",
     city: "Varanasi",
@@ -153,6 +156,27 @@ describe("placeOrder", () => {
 
     expect(result).toMatchObject({ ok: true, replayed: false, order: { total: 999 } });
     expect(incrementCouponUse).toHaveBeenCalledWith("coupon-1");
+  });
+
+  it("creates a pending PayU attempt without consuming the coupon", async () => {
+    const createOrder = vi.fn(async (order) => ({ ...order, id: "order-payu", orderNumber: order.orderNumber }));
+    const createPaymentAttempt = vi.fn(async (attempt) => ({ ...attempt, id: "attempt-1" }));
+    const incrementCouponUse = vi.fn();
+    getDataProviderMock.mockReturnValue({
+      listCustomers: vi.fn().mockResolvedValue([loggedInCustomer]), getOrder: vi.fn().mockResolvedValue(null),
+      updateCustomer: vi.fn().mockResolvedValue(loggedInCustomer),
+      getProduct: vi.fn().mockResolvedValue({ id: "product-1", slug: "demo-product", name: "Demo Product", price: 1000, currency: "INR", active: true, availability: "in-stock", sizes: ["M"] }),
+      listCoupons: vi.fn().mockResolvedValue([{ id: "coupon-1", code: "SAVE10", discountType: "percentage", discountValue: 10, active: true, usedCount: 0 }]),
+      listShippingRates: vi.fn().mockResolvedValue([{ id: "standard", name: "Standard", amount: 99, active: true }]),
+      createOrder, createPaymentAttempt, incrementCouponUse,
+    });
+
+    const result = await placeOrder({ ...input, paymentMethod: "payu", couponCode: "SAVE10" });
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", paymentStatus: "pending", paymentMethod: "payu", total: 999 }));
+    expect(createPaymentAttempt).toHaveBeenCalledWith(expect.objectContaining({ orderId: "order-payu", amount: 999, status: "pending", customerPhone: "+919876543210", couponId: "coupon-1" }));
+    expect(incrementCouponUse).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ ok: true, mode: "payu", gateway: { actionUrl: "https://test.payu.in/_payment" } });
   });
 });
 

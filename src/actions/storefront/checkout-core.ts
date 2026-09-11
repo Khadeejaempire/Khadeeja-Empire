@@ -35,10 +35,12 @@ export const checkoutInputSchema = z
       .max(50),
     customer: z
       .object({
-        name: z.string().trim().min(2).max(120),
+        name: z.string().trim().min(2).max(120).refine((value) => !value.includes("|"), "Name contains an unsupported character."),
         email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+        phone: z.string().trim().regex(/^[+0-9][0-9\s-]{8,18}$/, "Enter a valid phone number."),
       })
       .strict(),
+    paymentMethod: z.enum(["cod", "payu"]),
     shippingAddress: z
       .object({
         line1: z.string().trim().min(5).max(200),

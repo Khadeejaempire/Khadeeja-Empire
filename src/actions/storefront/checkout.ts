@@ -1,9 +1,11 @@
 "use server";
 
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ConflictError } from "../../lib/admin/errors";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { getDataProvider } from "../../lib/data";
+import { buildHostedCheckout, type HostedCheckout } from "../../lib/payu/payment";
 import {
   buildCheckoutQuote,
   checkoutAddress,
@@ -17,7 +19,8 @@ import {
 } from "./checkout-core";
 
 export type CheckoutActionResult =
-  | { ok: true; order: ReturnType<typeof publicOrder>; replayed: boolean }
+  | { ok: true; mode: "cod"; order: ReturnType<typeof publicOrder>; replayed: boolean }
+  | { ok: true; mode: "payu"; order: ReturnType<typeof publicOrder>; replayed: boolean; gateway: HostedCheckout }
   | {
       ok: false;
       code: "VALIDATION" | "UNAUTHENTICATED" | "CART" | "PROVIDER";
@@ -60,11 +63,14 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
 
   const provider = getDataProvider();
   const customers = await provider.listCustomers({ search: userEmail });
-  const customer = customers.find((c) => c.email === userEmail);
-  if (!customer || !customer.phone) {
+  const customer = customers.find((c) => c.email?.toLowerCase() === userEmail.toLowerCase());
+  if (!customer) {
     return { ok: false, code: "UNAUTHENTICATED", message: "Your customer profile is incomplete. Please contact support." };
   }
-  const session = { customerId: customer.id, phone: customer.phone };
+  if (parsed.data.customer.email !== userEmail.toLowerCase()) {
+    return { ok: false, code: "UNAUTHENTICATED", message: "Use the email address linked to your signed-in account." };
+  }
+  const session = { customerId: customer.id, phone: parsed.data.customer.phone };
 
   const orderNumber = checkoutOrderNumber(session.customerId, parsed.data.idempotencyKey);
   try {
@@ -73,13 +79,36 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
       if (existing.customerId !== session.customerId) {
         return { ok: false, code: "PROVIDER", message: "This checkout attempt could not be verified." };
       }
-      return { ok: true, order: publicOrder(existing), replayed: true };
+      if ((existing.paymentMethod ?? "cod") !== parsed.data.paymentMethod) {
+        return { ok: false, code: "PROVIDER", message: "This checkout attempt already uses another payment method." };
+      }
+      if (parsed.data.paymentMethod === "cod") {
+        return { ok: true, mode: "cod", order: publicOrder(existing), replayed: true };
+      }
+      let attempt = await provider.getLatestPaymentAttemptForOrder(existing.id);
+      if (!attempt || attempt.status === "failed" || attempt.status === "cancelled") {
+        const transactionId = attempt
+          ? `KE-${createHash("sha256").update(`${orderNumber}:${randomUUID()}`).digest("hex").slice(0, 20).toUpperCase()}`
+          : orderNumber;
+        let couponId: string | null = null;
+        if (existing.couponCode) {
+          const coupons = await provider.listCoupons({ search: existing.couponCode });
+          couponId = coupons.find((item) => item.code.toUpperCase() === existing.couponCode!.toUpperCase())?.id ?? null;
+        }
+        attempt = await provider.createPaymentAttempt({
+          orderId: existing.id, provider: "payu", transactionId, status: "pending",
+          amount: existing.total, currency: existing.currency ?? "INR", productInfo: `Order ${orderNumber}`,
+          customerName: parsed.data.customer.name, customerEmail: parsed.data.customer.email,
+          customerPhone: customer.phone ?? parsed.data.customer.phone, couponId,
+        });
+      }
+      return { ok: true, mode: "payu", order: publicOrder(existing), replayed: true, gateway: buildHostedCheckout(attempt, orderNumber) };
     }
 
     await provider.updateCustomer(session.customerId, {
       name: parsed.data.customer.name,
       email: parsed.data.customer.email,
-      phone: session.phone,
+      phone: customer.phone ?? session.phone,
       status: "active",
     });
 
@@ -94,9 +123,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
     const order = await provider.createOrder({
       orderNumber,
       customerId: session.customerId,
-      status: "confirmed",
+      status: parsed.data.paymentMethod === "cod" ? "confirmed" : "pending",
       paymentStatus: "pending",
-      paymentMethod: "cod",
+      paymentMethod: parsed.data.paymentMethod,
       currency: quote.currency,
       subtotal: quote.subtotal,
       shipping: quote.shipping,
@@ -108,10 +137,25 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
       notes: parsed.data.notes ?? null,
       items: quote.items,
     });
-    if (quote.couponId) {
+    if (quote.couponId && parsed.data.paymentMethod === "cod") {
       await provider.incrementCouponUse(quote.couponId);
     }
-    return { ok: true, order: publicOrder(order), replayed: false };
+    if (parsed.data.paymentMethod === "cod") {
+      return { ok: true, mode: "cod", order: publicOrder(order), replayed: false };
+    }
+    let attempt;
+    try {
+      attempt = await provider.createPaymentAttempt({
+        orderId: order.id, provider: "payu", transactionId: orderNumber, status: "pending",
+        amount: order.total, currency: order.currency ?? "INR", productInfo: `Order ${orderNumber}`,
+        customerName: parsed.data.customer.name, customerEmail: parsed.data.customer.email,
+        customerPhone: customer.phone ?? parsed.data.customer.phone, couponId: quote.couponId,
+      });
+    } catch (error) {
+      await provider.deleteOrder(order.id).catch(() => undefined);
+      throw error;
+    }
+    return { ok: true, mode: "payu", order: publicOrder(order), replayed: false, gateway: buildHostedCheckout(attempt, orderNumber) };
   } catch (error) {
     if (error instanceof CheckoutError) {
       return { ok: false, code: "CART", message: error.message };
@@ -120,7 +164,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
       try {
         const existing = await getDataProvider().getOrder(orderNumber);
         if (existing?.customerId === session.customerId) {
-          return { ok: true, order: publicOrder(existing), replayed: true };
+          if (existing.paymentMethod === "cod") return { ok: true, mode: "cod", order: publicOrder(existing), replayed: true };
         }
       } catch {
         // The stable generic error below covers a failed conflict lookup.

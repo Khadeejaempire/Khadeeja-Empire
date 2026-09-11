@@ -29,6 +29,9 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentAttemptMutationInput,
+  PaymentAttemptRecord,
+  VerifiedPaymentResultInput,
   ProductColorRecord,
   ProductImageRecord,
   ProductInformationRecord,
@@ -653,10 +656,75 @@ export class LocalDataProvider implements DataProvider {
   async updateOrderStatus(orderId: string, status: OrderStatus): Promise<OrderRecord> {
     const state = await this.update((current) => {
       const order = find(current.orders, orderId, "Order");
+      if (order.paymentMethod === "payu" && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
+        throw new ConflictError("An unpaid online order cannot enter fulfilment.");
+      }
       Object.assign(order, { status, updatedAt: now() });
       return current;
     });
     return hydrateOrder(state, find(state.orders, orderId, "Order"));
+  }
+
+  async createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord> {
+    let createdId = "";
+    await this.update((state) => {
+      ensureUnique(state.paymentAttempts, (attempt) => attempt.transactionId === input.transactionId, "That payment transaction already exists.");
+      createdId = id("payment-attempt");
+      if (input.couponId) {
+        const coupon = find(state.coupons, input.couponId, "Coupon");
+        const currentTime = Date.now();
+        for (const stale of state.paymentAttempts.filter((item) => item.couponId === input.couponId && item.couponReserved && ["created", "pending"].includes(item.status) && item.reservationExpiresAt && Date.parse(item.reservationExpiresAt) <= currentTime)) {
+          stale.couponReserved = false;
+          coupon.usedCount = Math.max(0, (coupon.usedCount ?? 0) - 1);
+        }
+        if (coupon.maximumUses != null && (coupon.usedCount ?? 0) >= coupon.maximumUses) throw new ConflictError("That coupon has reached its usage limit.");
+        coupon.usedCount = (coupon.usedCount ?? 0) + 1;
+      }
+      state.paymentAttempts.push({ ...input, id: createdId, couponReserved: Boolean(input.couponId), reservationExpiresAt: input.couponId ? new Date(Date.now() + 30 * 60_000).toISOString() : null, createdAt: now(), updatedAt: now() });
+      return state;
+    });
+    const created = (await this.read()).paymentAttempts.find((attempt) => attempt.id === createdId);
+    if (!created) throw new NotFoundError("Payment attempt");
+    return created;
+  }
+
+  async getPaymentAttemptByTransactionId(transactionId: string): Promise<PaymentAttemptRecord | null> {
+    return (await this.read()).paymentAttempts.find((attempt) => attempt.transactionId === transactionId) ?? null;
+  }
+
+  async getLatestPaymentAttemptForOrder(orderId: string): Promise<PaymentAttemptRecord | null> {
+    const attempts = (await this.read()).paymentAttempts.filter((attempt) => attempt.orderId === orderId);
+    return attempts.sort((a, b) => Date.parse(b.createdAt ?? "") - Date.parse(a.createdAt ?? ""))[0] ?? null;
+  }
+
+  async applyVerifiedPaymentResult(input: VerifiedPaymentResultInput): Promise<PaymentAttemptRecord> {
+    const state = await this.update((current) => {
+      const attempt = current.paymentAttempts.find((item) => item.transactionId === input.transactionId);
+      if (!attempt) throw new NotFoundError("Payment attempt");
+      const order = find(current.orders, attempt.orderId, "Order");
+      if (attempt.status === "paid" || attempt.status === "refunded") return current;
+      const becamePaid = input.status === "paid";
+      Object.assign(attempt, {
+        status: input.status,
+        providerPaymentId: input.providerPaymentId ?? attempt.providerPaymentId ?? null,
+        failureCode: becamePaid ? null : input.failureCode ?? null,
+        failureMessage: becamePaid ? null : input.failureMessage ?? null,
+        verifiedAt: now(),
+        updatedAt: now(),
+      });
+      order.paymentStatus = input.status;
+      if (becamePaid && ["pending", "confirmed"].includes(order.status)) order.status = "confirmed";
+      order.updatedAt = now();
+      if (!becamePaid && attempt.couponId && attempt.couponReserved) {
+        const coupon = current.coupons.find((item) => item.id === attempt.couponId);
+        if (coupon) coupon.usedCount = Math.max(0, (coupon.usedCount ?? 0) - 1);
+        attempt.couponReserved = false;
+      }
+      return current;
+    });
+    const result = state.paymentAttempts.find((attempt) => attempt.transactionId === input.transactionId);
+    if (!result) throw new NotFoundError("Payment attempt");
+    return result;
   }
 
   async deleteOrder(orderId: string): Promise<void> {
@@ -664,6 +732,7 @@ export class LocalDataProvider implements DataProvider {
       find(state.orders, orderId, "Order");
       state.orders = state.orders.filter((order) => order.id !== orderId);
       state.orderItems = state.orderItems.filter((item) => item.orderId !== orderId);
+      state.paymentAttempts = state.paymentAttempts.filter((attempt) => attempt.orderId !== orderId);
       return state;
     });
   }

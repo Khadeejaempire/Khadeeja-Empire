@@ -31,6 +31,9 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentAttemptMutationInput,
+  PaymentAttemptRecord,
+  VerifiedPaymentResultInput,
   ProductColorRecord,
   ProductImageRecord,
   ProductInformationRecord,
@@ -505,8 +508,51 @@ export class SupabaseDataProvider implements DataProvider {
     return (await this.getOrder(order.id))!;
   }
 
-  updateOrderStatus(orderId: string, status: OrderStatus) {
+  async updateOrderStatus(orderId: string, status: OrderStatus) {
+    const order = await this.getOrder(orderId);
+    if (!order) throw new NotFoundError("Order");
+    if (order.paymentMethod === "payu" && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
+      throw new ConflictError("An unpaid online order cannot enter fulfilment.");
+    }
     return this.updateRow<OrderRecord>("orders", orderId, { status, updatedAt: now() }, "Could not update order status.");
+  }
+
+  async createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord> {
+    const result = await this.client.rpc("create_payu_payment_attempt", {
+      p_order_id: input.orderId, p_transaction_id: input.transactionId, p_amount: input.amount,
+      p_currency: input.currency, p_product_info: input.productInfo, p_customer_name: input.customerName,
+      p_customer_email: input.customerEmail, p_customer_phone: input.customerPhone, p_coupon_id: input.couponId ?? null,
+    });
+    if (result.error) this.translateError(result.error, "Could not create payment attempt.");
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    if (!row) throw new NotFoundError("Payment attempt");
+    return fromRow<PaymentAttemptRecord>(row);
+  }
+
+  async getPaymentAttemptByTransactionId(transactionId: string): Promise<PaymentAttemptRecord | null> {
+    const result = await this.client.from("payment_attempts").select("*").eq("transaction_id", transactionId).maybeSingle();
+    if (result.error) this.translateError(result.error, "Could not read payment attempt.");
+    return result.data ? fromRow<PaymentAttemptRecord>(result.data) : null;
+  }
+
+  async getLatestPaymentAttemptForOrder(orderId: string): Promise<PaymentAttemptRecord | null> {
+    const result = await this.client.from("payment_attempts").select("*").eq("order_id", orderId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (result.error) this.translateError(result.error, "Could not read payment attempt.");
+    return result.data ? fromRow<PaymentAttemptRecord>(result.data) : null;
+  }
+
+  async applyVerifiedPaymentResult(input: VerifiedPaymentResultInput): Promise<PaymentAttemptRecord> {
+    const result = await this.client.rpc("apply_verified_payu_result", {
+      p_transaction_id: input.transactionId,
+      p_status: input.status,
+      p_provider_payment_id: input.providerPaymentId ?? null,
+      p_failure_code: input.failureCode ?? null,
+      p_failure_message: input.failureMessage ?? null,
+    });
+    if (result.error) this.translateError(result.error, "Could not apply payment result.");
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    if (!row) throw new NotFoundError("Payment attempt");
+    return fromRow<PaymentAttemptRecord>(row);
   }
 
   async deleteOrder(orderId: string): Promise<void> {

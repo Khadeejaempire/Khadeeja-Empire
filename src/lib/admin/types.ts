@@ -200,6 +200,43 @@ export type OrderStatus =
   | "refunded";
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentAttemptStatus = "created" | "pending" | "paid" | "failed" | "cancelled" | "refunded";
+
+export interface PaymentAttemptRecord {
+  id: ProviderId;
+  orderId: ProviderId;
+  provider: "payu";
+  transactionId: string;
+  providerPaymentId?: string | null;
+  status: PaymentAttemptStatus;
+  amount: number;
+  currency: string;
+  productInfo: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  couponId?: ProviderId | null;
+  couponReserved?: boolean | null;
+  reservationExpiresAt?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  verifiedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export type PaymentAttemptMutationInput = Omit<
+  PaymentAttemptRecord,
+  "id" | "providerPaymentId" | "failureCode" | "failureMessage" | "verifiedAt" | "createdAt" | "updatedAt"
+>;
+
+export interface VerifiedPaymentResultInput {
+  transactionId: string;
+  status: "paid" | "failed";
+  providerPaymentId?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+}
 
 export interface OrderItemRecord {
   id: ProviderId;
@@ -605,6 +642,7 @@ export interface AdminDataState {
   addresses: AddressRecord[];
   orders: OrderRecord[];
   orderItems: OrderItemRecord[];
+  paymentAttempts: PaymentAttemptRecord[];
   reviews: ReviewRecord[];
   inquiries: InquiryRecord[];
   subscribers: SubscriberRecord[];

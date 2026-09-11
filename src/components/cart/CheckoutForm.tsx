@@ -12,7 +12,7 @@ import Link from "next/link";
 import { 
   User, Mail, Phone, MapPin, Home, Building2, Map, Tag, Shield, 
   Lock, ShoppingBag, Trash2, Minus, Plus, Truck, RotateCcw, Award,
-  ShieldCheck, ChevronDown, CheckCircle2, Building, Ticket, Compass,
+  ShieldCheck, ChevronDown, CheckCircle2, Building, Ticket, Compass, CreditCard,
   ChevronRight
 } from "lucide-react";
 
@@ -43,6 +43,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState<number | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"payu" | "cod">("payu");
 
   const freeShippingThreshold = 2000;
   const progressPercentage = Math.min((subtotal / freeShippingThreshold) * 100, 100);
@@ -64,7 +65,8 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
       const result = await placeOrder({
         idempotencyKey: attemptKey.current,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity, size: item.size || undefined })),
-        customer: { name: parsed.data.name, email: parsed.data.email },
+        customer: { name: parsed.data.name, email: parsed.data.email, phone: parsed.data.phone },
+        paymentMethod,
         shippingAddress: { line1: parsed.data.address, line2: parsed.data.address2 || undefined, city: parsed.data.city, state: parsed.data.state, postalCode: parsed.data.pincode, country: "IN" },
         couponCode: parsed.data.couponCode || undefined,
       });
@@ -75,6 +77,21 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
         }
         setSubmitError(result.message);
         if (result.fieldErrors) setErrors(Object.fromEntries(Object.entries(result.fieldErrors).map(([key, value]) => [key, value?.[0] || "Invalid value"])));
+        return;
+      }
+      if (result.mode === "payu") {
+        const gatewayForm = document.createElement("form");
+        gatewayForm.method = "POST";
+        gatewayForm.action = result.gateway.actionUrl;
+        for (const [name, value] of Object.entries(result.gateway.fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          gatewayForm.appendChild(input);
+        }
+        document.body.appendChild(gatewayForm);
+        gatewayForm.submit();
         return;
       }
       setConfirmation(result.order);
@@ -259,17 +276,19 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
         </div>
 
         {/* Payment Mode */}
-        <div className="bg-[#fcfaf7] border border-[#d8b88d]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm transition-shadow hover:shadow-md">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-[#d8b88d]/30 flex items-center justify-center text-[#a27b53] shrink-0 shadow-sm">
-            <Shield size={20} strokeWidth={1.5} />
-          </div>
-          <div>
-            <h4 className="text-[17px] sm:text-[19px] md:text-[22px] font-semibold text-dark mb-1">Cash on Delivery</h4>
-            <p className="text-[12px] sm:text-[13px] text-muted leading-snug">
-              Pay in cash when your order arrives. No card, bank, or UPI details are requested online.
-            </p>
-          </div>
-        </div>
+        <fieldset className="space-y-3">
+          <legend className="mb-3 text-2xl font-semibold text-ink">Payment method</legend>
+          {([
+            { value: "payu" as const, title: "Pay online with PayU", copy: "Cards, UPI, net banking and supported wallets.", icon: <CreditCard size={20} /> },
+            { value: "cod" as const, title: "Cash on Delivery", copy: "Pay in cash when your order arrives.", icon: <Shield size={20} /> },
+          ]).map((option) => (
+            <label key={option.value} className={`flex cursor-pointer items-center gap-4 border p-4 transition ${paymentMethod === option.value ? "border-[#6f302a] bg-[#fcfaf7]" : "border-[#d8b88d]/40 bg-white"}`}>
+              <input type="radio" name="paymentMethod" value={option.value} checked={paymentMethod === option.value} onChange={() => setPaymentMethod(option.value)} className="accent-[#6f302a]" />
+              <span className="text-[#a27b53]">{option.icon}</span>
+              <span><strong className="block text-ink">{option.title}</strong><small className="text-muted">{option.copy}</small></span>
+            </label>
+          ))}
+        </fieldset>
 
         {submitError && (
           <p className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 text-sm font-medium text-center shadow-sm" role="alert">
@@ -285,7 +304,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
             className="flex items-center justify-center gap-2 w-full bg-[#2a2420] text-white py-4.5 text-[13px] font-bold tracking-[0.1em] uppercase hover:bg-[#1a1612] transition-all shadow-md active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
           >
             <Lock size={15} />
-            {pending ? "PROCESSING..." : "PLACE ORDER"}
+            {pending ? "PROCESSING..." : paymentMethod === "payu" ? "PAY SECURELY" : "PLACE COD ORDER"}
           </button>
           <div className="flex items-center justify-center gap-1.5 text-muted">
             <ShieldCheck size={14} />
