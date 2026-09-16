@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ConflictError } from "../../lib/admin/errors";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { getDataProvider } from "../../lib/data";
-import { buildHostedCheckout, type HostedCheckout } from "../../lib/payu/payment";
+import { createCashfreeOrder } from "@/lib/cashfree/payment";
 import {
   buildCheckoutQuote,
   checkoutAddress,
@@ -20,7 +20,7 @@ import {
 
 export type CheckoutActionResult =
   | { ok: true; mode: "cod"; order: ReturnType<typeof publicOrder>; replayed: boolean }
-  | { ok: true; mode: "payu"; order: ReturnType<typeof publicOrder>; replayed: boolean; gateway: HostedCheckout }
+  | { ok: true; mode: "cashfree"; order: ReturnType<typeof publicOrder>; replayed: boolean; paymentSessionId: string; environment: "sandbox" | "production" }
   | {
       ok: false;
       code: "VALIDATION" | "UNAUTHENTICATED" | "CART" | "PROVIDER";
@@ -96,13 +96,14 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
           couponId = coupons.find((item) => item.code.toUpperCase() === existing.couponCode!.toUpperCase())?.id ?? null;
         }
         attempt = await provider.createPaymentAttempt({
-          orderId: existing.id, provider: "payu", transactionId, status: "pending",
+          orderId: existing.id, provider: "cashfree", transactionId, status: "pending",
           amount: existing.total, currency: existing.currency ?? "INR", productInfo: `Order ${orderNumber}`,
           customerName: parsed.data.customer.name, customerEmail: parsed.data.customer.email,
           customerPhone: customer.phone ?? parsed.data.customer.phone, couponId,
         });
       }
-      return { ok: true, mode: "payu", order: publicOrder(existing), replayed: true, gateway: buildHostedCheckout(attempt, orderNumber) };
+      const cashfree = await createCashfreeOrder(attempt, session.customerId);
+      return { ok: true, mode: "cashfree", order: publicOrder(existing), replayed: true, paymentSessionId: cashfree.paymentSessionId, environment: cashfree.environment };
     }
 
     await provider.updateCustomer(session.customerId, {
@@ -146,7 +147,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
     let attempt;
     try {
       attempt = await provider.createPaymentAttempt({
-        orderId: order.id, provider: "payu", transactionId: orderNumber, status: "pending",
+        orderId: order.id, provider: "cashfree", transactionId: orderNumber, status: "pending",
         amount: order.total, currency: order.currency ?? "INR", productInfo: `Order ${orderNumber}`,
         customerName: parsed.data.customer.name, customerEmail: parsed.data.customer.email,
         customerPhone: customer.phone ?? parsed.data.customer.phone, couponId: quote.couponId,
@@ -155,7 +156,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
       await provider.deleteOrder(order.id).catch(() => undefined);
       throw error;
     }
-    return { ok: true, mode: "payu", order: publicOrder(order), replayed: false, gateway: buildHostedCheckout(attempt, orderNumber) };
+    const cashfree = await createCashfreeOrder(attempt, session.customerId);
+    return { ok: true, mode: "cashfree", order: publicOrder(order), replayed: false, paymentSessionId: cashfree.paymentSessionId, environment: cashfree.environment };
   } catch (error) {
     if (error instanceof CheckoutError) {
       return { ok: false, code: "CART", message: error.message };

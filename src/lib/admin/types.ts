@@ -205,7 +205,7 @@ export type PaymentAttemptStatus = "created" | "pending" | "paid" | "failed" | "
 export interface PaymentAttemptRecord {
   id: ProviderId;
   orderId: ProviderId;
-  provider: "payu";
+  provider: "payu" | "cashfree";
   transactionId: string;
   providerPaymentId?: string | null;
   status: PaymentAttemptStatus;

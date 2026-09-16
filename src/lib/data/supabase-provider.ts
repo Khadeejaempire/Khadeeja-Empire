@@ -511,14 +511,14 @@ export class SupabaseDataProvider implements DataProvider {
   async updateOrderStatus(orderId: string, status: OrderStatus) {
     const order = await this.getOrder(orderId);
     if (!order) throw new NotFoundError("Order");
-    if (order.paymentMethod === "payu" && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
+    if (["payu", "cashfree"].includes(order.paymentMethod ?? "") && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
       throw new ConflictError("An unpaid online order cannot enter fulfilment.");
     }
     return this.updateRow<OrderRecord>("orders", orderId, { status, updatedAt: now() }, "Could not update order status.");
   }
 
   async createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord> {
-    const result = await this.client.rpc("create_payu_payment_attempt", {
+    const result = await this.client.rpc("create_cashfree_payment_attempt", {
       p_order_id: input.orderId, p_transaction_id: input.transactionId, p_amount: input.amount,
       p_currency: input.currency, p_product_info: input.productInfo, p_customer_name: input.customerName,
       p_customer_email: input.customerEmail, p_customer_phone: input.customerPhone, p_coupon_id: input.couponId ?? null,
@@ -542,7 +542,7 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   async applyVerifiedPaymentResult(input: VerifiedPaymentResultInput): Promise<PaymentAttemptRecord> {
-    const result = await this.client.rpc("apply_verified_payu_result", {
+    const result = await this.client.rpc("apply_verified_cashfree_result", {
       p_transaction_id: input.transactionId,
       p_status: input.status,
       p_provider_payment_id: input.providerPaymentId ?? null,

@@ -230,7 +230,7 @@ const storedOrderSchema = z
 const storedPaymentAttemptSchema = z.object({
   id: storedId,
   orderId: storedId,
-  provider: z.literal("payu"),
+  provider: z.enum(["payu", "cashfree"]),
   transactionId: z.string().min(1),
   providerPaymentId: storedNullableString,
   status: z.enum(["created", "pending", "paid", "failed", "cancelled", "refunded"]),

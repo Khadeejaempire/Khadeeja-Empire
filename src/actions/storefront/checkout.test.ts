@@ -2,10 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUserMock, getDataProviderMock, buildHostedCheckoutMock } = vi.hoisted(() => ({
+const { getUserMock, getDataProviderMock, createCashfreeOrderMock } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
   getDataProviderMock: vi.fn(),
-  buildHostedCheckoutMock: vi.fn(() => ({ actionUrl: "https://test.payu.in/_payment", fields: { txnid: "KE-TEST", hash: "hash" } })),
+  createCashfreeOrderMock: vi.fn(() => ({ paymentSessionId: "session-test", environment: "sandbox" })),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -13,7 +13,7 @@ vi.mock("../../lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(async () => ({ auth: { getUser: getUserMock } })),
 }));
 vi.mock("../../lib/data", () => ({ getDataProvider: getDataProviderMock }));
-vi.mock("../../lib/payu/payment", () => ({ buildHostedCheckout: buildHostedCheckoutMock }));
+vi.mock("@/lib/cashfree/payment", () => ({ createCashfreeOrder: createCashfreeOrderMock }));
 
 import { placeOrder, previewCouponAction } from "./checkout";
 
@@ -158,8 +158,8 @@ describe("placeOrder", () => {
     expect(incrementCouponUse).toHaveBeenCalledWith("coupon-1");
   });
 
-  it("creates a pending PayU attempt without consuming the coupon", async () => {
-    const createOrder = vi.fn(async (order) => ({ ...order, id: "order-payu", orderNumber: order.orderNumber }));
+  it("creates a pending Cashfree attempt without consuming the coupon", async () => {
+    const createOrder = vi.fn(async (order) => ({ ...order, id: "order-cashfree", orderNumber: order.orderNumber }));
     const createPaymentAttempt = vi.fn(async (attempt) => ({ ...attempt, id: "attempt-1" }));
     const incrementCouponUse = vi.fn();
     getDataProviderMock.mockReturnValue({
@@ -171,12 +171,12 @@ describe("placeOrder", () => {
       createOrder, createPaymentAttempt, incrementCouponUse,
     });
 
-    const result = await placeOrder({ ...input, paymentMethod: "payu", couponCode: "SAVE10" });
+    const result = await placeOrder({ ...input, paymentMethod: "cashfree", couponCode: "SAVE10" });
 
-    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", paymentStatus: "pending", paymentMethod: "payu", total: 999 }));
-    expect(createPaymentAttempt).toHaveBeenCalledWith(expect.objectContaining({ orderId: "order-payu", amount: 999, status: "pending", customerPhone: "+919876543210", couponId: "coupon-1" }));
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", paymentStatus: "pending", paymentMethod: "cashfree", total: 999 }));
+    expect(createPaymentAttempt).toHaveBeenCalledWith(expect.objectContaining({ orderId: "order-cashfree", provider: "cashfree", amount: 999, status: "pending", customerPhone: "+919876543210", couponId: "coupon-1" }));
     expect(incrementCouponUse).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ ok: true, mode: "payu", gateway: { actionUrl: "https://test.payu.in/_payment" } });
+    expect(result).toMatchObject({ ok: true, mode: "cashfree", paymentSessionId: "session-test", environment: "sandbox" });
   });
 });
 

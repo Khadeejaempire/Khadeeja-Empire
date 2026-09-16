@@ -656,7 +656,7 @@ export class LocalDataProvider implements DataProvider {
   async updateOrderStatus(orderId: string, status: OrderStatus): Promise<OrderRecord> {
     const state = await this.update((current) => {
       const order = find(current.orders, orderId, "Order");
-      if (order.paymentMethod === "payu" && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
+      if (["payu", "cashfree"].includes(order.paymentMethod ?? "") && order.paymentStatus !== "paid" && ["confirmed", "processing", "shipped", "delivered"].includes(status)) {
         throw new ConflictError("An unpaid online order cannot enter fulfilment.");
       }
       Object.assign(order, { status, updatedAt: now() });

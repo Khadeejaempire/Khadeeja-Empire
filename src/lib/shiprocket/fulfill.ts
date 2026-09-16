@@ -4,7 +4,12 @@ import type { OrderRecord } from "@/lib/admin/types";
 import type { ShiprocketOrderPayload } from "./api";
 import { createShiprocketOrder, getShiprocketApiConfig, isShiprocketConfigured } from "./api";
 
-export function buildShiprocketOrderPayload(order: OrderRecord): ShiprocketOrderPayload {
+export type ShiprocketContact = {
+  email?: string | null;
+  phone?: string | null;
+};
+
+export function buildShiprocketOrderPayload(order: OrderRecord, contact: ShiprocketContact = {}): ShiprocketOrderPayload {
   const address = order.shippingAddress ?? order.billingAddress;
   if (!address) throw new Error(`Order ${order.orderNumber} has no shipping address.`);
   const nameParts = address.fullName.trim().split(/\s+/);
@@ -29,8 +34,8 @@ export function buildShiprocketOrderPayload(order: OrderRecord): ShiprocketOrder
     billing_state: address.state,
     billing_pincode: address.postalCode,
     billing_country: address.country || "India",
-    billing_email: "",
-    billing_phone: address.phone || "",
+    billing_email: contact.email?.trim() || "",
+    billing_phone: contact.phone?.trim() || address.phone || "",
     shipping_customer_name: firstName,
     shipping_last_name: lastName,
     shipping_address: line1,
@@ -64,11 +69,11 @@ export function mapShiprocketStatus(
 }
 
 /** Push a paid order to Shiprocket. Fire-and-forget; never blocks payment flow. */
-export async function fulfillWithShiprocket(order: OrderRecord): Promise<number> {
+export async function fulfillWithShiprocket(order: OrderRecord, contact: ShiprocketContact = {}): Promise<number> {
   if (!isShiprocketConfigured()) {
     throw new Error("Shiprocket is not configured: set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.");
   }
-  const payload = buildShiprocketOrderPayload(order);
+  const payload = buildShiprocketOrderPayload(order, contact);
   const pickupLocation = getShiprocketApiConfig().pickupLocation;
   if (pickupLocation) payload.pickup_location = pickupLocation;
   else delete payload.pickup_location; // Shiprocket falls back to your default pickup address

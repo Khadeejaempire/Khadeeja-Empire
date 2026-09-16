@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { 
   User, Mail, Phone, MapPin, Home, Building2, Map, Tag, Shield, 
   Lock, ShoppingBag, Trash2, Minus, Plus, Truck, RotateCcw, Award,
@@ -43,7 +44,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState<number | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"payu" | "cod">("payu");
+  const [paymentMethod, setPaymentMethod] = useState<"cashfree" | "cod">("cashfree");
 
   const freeShippingThreshold = 2000;
   const progressPercentage = Math.min((subtotal / freeShippingThreshold) * 100, 100);
@@ -79,19 +80,13 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
         if (result.fieldErrors) setErrors(Object.fromEntries(Object.entries(result.fieldErrors).map(([key, value]) => [key, value?.[0] || "Invalid value"])));
         return;
       }
-      if (result.mode === "payu") {
-        const gatewayForm = document.createElement("form");
-        gatewayForm.method = "POST";
-        gatewayForm.action = result.gateway.actionUrl;
-        for (const [name, value] of Object.entries(result.gateway.fields)) {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = name;
-          input.value = value;
-          gatewayForm.appendChild(input);
+      if (result.mode === "cashfree") {
+        const cashfree = window.Cashfree?.({ mode: result.environment });
+        if (!cashfree) {
+          setSubmitError("The secure payment service is still loading. Please try again.");
+          return;
         }
-        document.body.appendChild(gatewayForm);
-        gatewayForm.submit();
+        cashfree.checkout({ paymentSessionId: result.paymentSessionId, redirectTarget: "_self" });
         return;
       }
       setConfirmation(result.order);
@@ -194,6 +189,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
 
   return (
     <div className="max-w-[1400px] mx-auto pb-20 pt-4 md:pt-6 px-4 md:px-6">
+      <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="afterInteractive" />
       {/* Breadcrumb Nav */}
       <nav className="flex items-center gap-1.5 text-[12px] md:text-[13px] font-medium tracking-wide text-muted mb-6 md:mb-8">
         <Link className="hover:text-[#a27b53] transition-colors" href="/">Home</Link>
@@ -279,7 +275,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
         <fieldset className="space-y-3">
           <legend className="mb-3 text-2xl font-semibold text-ink">Payment method</legend>
           {([
-            { value: "payu" as const, title: "Pay online with PayU", copy: "Cards, UPI, net banking and supported wallets.", icon: <CreditCard size={20} /> },
+            { value: "cashfree" as const, title: "Pay online with Cashfree", copy: "Cards, UPI, net banking and supported wallets.", icon: <CreditCard size={20} /> },
             { value: "cod" as const, title: "Cash on Delivery", copy: "Pay in cash when your order arrives.", icon: <Shield size={20} /> },
           ]).map((option) => (
             <label key={option.value} className={`flex cursor-pointer items-center gap-4 border p-4 transition ${paymentMethod === option.value ? "border-[#6f302a] bg-[#fcfaf7]" : "border-[#d8b88d]/40 bg-white"}`}>
@@ -304,7 +300,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
             className="flex items-center justify-center gap-2 w-full bg-[#2a2420] text-white py-4.5 text-[13px] font-bold tracking-[0.1em] uppercase hover:bg-[#1a1612] transition-all shadow-md active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
           >
             <Lock size={15} />
-            {pending ? "PROCESSING..." : paymentMethod === "payu" ? "PAY SECURELY" : "PLACE COD ORDER"}
+            {pending ? "PROCESSING..." : paymentMethod === "cashfree" ? "PAY SECURELY" : "PLACE COD ORDER"}
           </button>
           <div className="flex items-center justify-center gap-1.5 text-muted">
             <ShieldCheck size={14} />

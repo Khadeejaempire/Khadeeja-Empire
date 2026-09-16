@@ -40,7 +40,7 @@ export const checkoutInputSchema = z
         phone: z.string().trim().regex(/^[+0-9][0-9\s-]{8,18}$/, "Enter a valid phone number."),
       })
       .strict(),
-    paymentMethod: z.enum(["cod", "payu"]),
+    paymentMethod: z.enum(["cod", "cashfree"]),
     shippingAddress: z
       .object({
         line1: z.string().trim().min(5).max(200),

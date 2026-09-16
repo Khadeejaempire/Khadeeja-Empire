@@ -184,7 +184,7 @@ create table if not exists order_items (
 create table if not exists payment_attempts (
   id text primary key default gen_random_uuid()::text,
   order_id text not null references orders(id) on delete cascade,
-  provider text not null default 'payu' check (provider = 'payu'),
+  provider text not null default 'cashfree' check (provider in ('payu', 'cashfree')),
   transaction_id text not null unique,
   provider_payment_id text,
   status text not null default 'created' check (status in ('created', 'pending', 'paid', 'failed', 'cancelled', 'refunded')),
@@ -363,7 +363,7 @@ do $$ begin
   alter table payment_attempts add constraint payment_attempts_coupon_id_fkey foreign key (coupon_id) references coupons(id) on delete set null;
 exception when duplicate_object then null; end $$;
 
-create or replace function public.create_payu_payment_attempt(
+create or replace function public.create_cashfree_payment_attempt(
   p_order_id text, p_transaction_id text, p_amount numeric, p_currency text,
   p_product_info text, p_customer_name text, p_customer_email text, p_customer_phone text,
   p_coupon_id text default null
@@ -383,15 +383,15 @@ begin
     update coupons set used_count = used_count + 1 where id = p_coupon_id;
   end if;
   insert into payment_attempts(order_id,provider,transaction_id,status,amount,currency,product_info,customer_name,customer_email,customer_phone,coupon_id,coupon_reserved,reservation_expires_at)
-  values(p_order_id,'payu',p_transaction_id,'pending',p_amount,p_currency,p_product_info,p_customer_name,p_customer_email,p_customer_phone,p_coupon_id,p_coupon_id is not null,case when p_coupon_id is null then null else timezone('utc',now()) + interval '30 minutes' end)
+  values(p_order_id,'cashfree',p_transaction_id,'pending',p_amount,p_currency,p_product_info,p_customer_name,p_customer_email,p_customer_phone,p_coupon_id,p_coupon_id is not null,case when p_coupon_id is null then null else timezone('utc',now()) + interval '30 minutes' end)
   returning * into v_attempt;
   return v_attempt;
 end; $$;
 
-revoke all on function public.create_payu_payment_attempt(text,text,numeric,text,text,text,text,text,text) from public, anon, authenticated;
-grant execute on function public.create_payu_payment_attempt(text,text,numeric,text,text,text,text,text,text) to service_role;
+revoke all on function public.create_cashfree_payment_attempt(text,text,numeric,text,text,text,text,text,text) from public, anon, authenticated;
+grant execute on function public.create_cashfree_payment_attempt(text,text,numeric,text,text,text,text,text,text) to service_role;
 
-create or replace function public.apply_verified_payu_result(
+create or replace function public.apply_verified_cashfree_result(
   p_transaction_id text,
   p_status text,
   p_provider_payment_id text default null,
@@ -408,7 +408,7 @@ begin
   select * into v_attempt from public.payment_attempts where transaction_id = p_transaction_id for update;
   if not found then raise exception 'Payment attempt not found'; end if;
   select * into v_order from public.orders where id = v_attempt.order_id for update;
-  if not found or v_order.payment_method <> 'payu' then raise exception 'PayU order not found'; end if;
+  if not found or v_order.payment_method <> 'cashfree' then raise exception 'Cashfree order not found'; end if;
   if v_attempt.status not in ('paid', 'refunded') then
     v_newly_paid := p_status = 'paid';
     update public.payment_attempts set status = p_status,
@@ -429,8 +429,8 @@ begin
 end;
 $$;
 
-revoke all on function public.apply_verified_payu_result(text,text,text,text,text) from public, anon, authenticated;
-grant execute on function public.apply_verified_payu_result(text,text,text,text,text) to service_role;
+revoke all on function public.apply_verified_cashfree_result(text,text,text,text,text) from public, anon, authenticated;
+grant execute on function public.apply_verified_cashfree_result(text,text,text,text,text) to service_role;
 create index if not exists reviews_product_status_idx on reviews(product_id, status);
 create index if not exists inquiries_status_idx on inquiries(status, created_at desc);
 create index if not exists announcements_order_idx on announcements(active, sort_order);

@@ -23,5 +23,5 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
 }
 
 function Result({ title, copy }: { title: string; copy: string }) {
-  return <main className="mx-auto max-w-xl px-6 py-24 text-center"><h1 className="font-display text-4xl text-ink">{title}</h1><p className="mt-4 text-muted">{copy}</p><div className="mt-8 flex justify-center gap-3"><Link className="bg-[#2a2420] px-6 py-3 text-white" href="/checkout">Return to checkout</Link><Link className="border border-[#2a2420] px-6 py-3 text-ink" href="/account/orders">View orders</Link></div></main>;
+  return <main className="mx-auto max-w-xl px-6 py-24 text-center"><h1 className="font-display text-4xl text-ink">{title}</h1><p className="mt-4 text-muted">{copy}</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Link className="inline-flex min-h-11 items-center justify-center bg-[#2a2420] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] !text-white transition-colors hover:bg-primary" style={{ color: "#ffffff" }} href="/checkout">Return to checkout</Link><Link className="inline-flex min-h-11 items-center justify-center border border-[#2a2420] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-[#2a2420] hover:!text-white" href="/account/orders">View orders</Link></div></main>;
 }

@@ -54,7 +54,7 @@ export async function processPayUResponse(fields: Record<string, string>) {
       // ponytail: no retry queue — re-pushed manually if a Shiprocket push is missed.
       const fullOrder = order.items ? order : await provider.getOrder(order.id);
       if (fullOrder?.items?.length) {
-        void fulfillWithShiprocket(fullOrder).catch(() => {});
+        void fulfillWithShiprocket(fullOrder, { email: attempt.customerEmail, phone: attempt.customerPhone }).catch(() => {});
       }
     }
   } else if (verified.status === "failure") {
