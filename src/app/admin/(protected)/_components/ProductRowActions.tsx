@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { deleteProductAction, toggleProductAction } from "@/actions/admin/products";
+import { adminActionMessage } from "@/lib/admin/errors";
 
 export function ProductRowActions({ id, active }: { id: string; active: boolean }) {
   const [isPending, startTransition] = useTransition();
@@ -17,7 +18,7 @@ export function ProductRowActions({ id, active }: { id: string; active: boolean 
         await toggleProductAction(formData);
         toast.success(active === false ? "Product activated." : "Product disabled.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not update the product.");
+        toast.error(adminActionMessage(error, "Could not update the product. Reload and check before retrying."));
       }
     });
   };
@@ -31,7 +32,7 @@ export function ProductRowActions({ id, active }: { id: string; active: boolean 
         await deleteProductAction(formData);
         toast.success("Product deleted.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not delete the product.");
+        toast.error(adminActionMessage(error, "Could not delete the product. Reload and check before retrying."));
       }
     });
   };

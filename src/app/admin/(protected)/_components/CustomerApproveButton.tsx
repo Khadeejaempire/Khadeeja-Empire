@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { toggleCustomerAction } from "@/actions/admin/customers";
+import { adminActionMessage } from "@/lib/admin/errors";
 
 export function CustomerApproveButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
@@ -16,7 +17,7 @@ export function CustomerApproveButton({ id }: { id: string }) {
         await toggleCustomerAction(formData);
         toast.success("Customer approved.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not approve the customer.");
+        toast.error(adminActionMessage(error, "Could not approve the customer. Reload and check before retrying."));
       }
     });
   };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { CategoryRecord, ProductRecord } from "@/lib/admin/types";
+import { adminActionMessage } from "@/lib/admin/errors";
 import { saveProductAction } from "@/actions/admin/products";
 import { ProductImagesUpload } from "@/components/admin/ProductImagesUpload";
 import { MediaUpload } from "@/components/admin/MediaUpload";
@@ -37,7 +38,7 @@ export function ProductForm({ product, categories }: { product?: ProductRecord; 
         toast.success(product ? "Product updated." : "Product created.");
         if (!product) router.push("/admin/products");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not save the product.");
+        toast.error(adminActionMessage(error, "Could not save the product. Reload and check before retrying."));
       }
     });
   };

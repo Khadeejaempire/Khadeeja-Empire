@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { CategoryRecord } from "@/lib/admin/types";
 import { saveCategoryAction } from "@/actions/admin/categories";
+import { adminActionMessage } from "@/lib/admin/errors";
 import { MediaUpload } from "@/components/admin/MediaUpload";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 outline-none transition focus:border-[#9c5247] focus:ring-2 focus:ring-[#9c5247]/20";
@@ -24,7 +25,7 @@ export function CategoryForm({ category, categories }: { category?: CategoryReco
         toast.success(category ? "Category updated." : "Category created.");
         if (!category) router.push("/admin/categories");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not save the category.");
+        toast.error(adminActionMessage(error, "Could not save the category. Reload and check before retrying."));
       }
     });
   };

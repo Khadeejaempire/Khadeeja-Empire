@@ -1,9 +1,11 @@
 "use client";
 
+import { adminActionMessage } from "@/lib/admin/errors";
+
 const CONFIG_HINTS = ["not configured", "configuration is incomplete", "credentials", "missing required"];
 
 export default function AdminError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  const message = error.message?.trim();
+  const message = adminActionMessage(error, "Something went wrong loading this page. Please try again.");
   const looksLikeConfigIssue = message ? CONFIG_HINTS.some((hint) => message.toLowerCase().includes(hint)) : false;
 
   return (

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { adminActionMessage } from "@/lib/admin/errors";
 
 type DeleteAction = (formData: FormData) => Promise<void>;
 
@@ -36,7 +37,7 @@ export function ConfirmDeleteButton({
         toast.success(successMessage);
         if (redirectTo) router.push(redirectTo);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not delete.");
+        toast.error(adminActionMessage(error, "Could not delete. Reload and check before retrying."));
       }
     });
   };

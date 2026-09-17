@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { deleteCategoryAction, toggleCategoryAction } from "@/actions/admin/categories";
+import { adminActionMessage } from "@/lib/admin/errors";
 
 export function CategoryRowActions({ id, name, active }: { id: string; name: string; active: boolean }) {
   const [isPending, startTransition] = useTransition();
@@ -17,7 +18,7 @@ export function CategoryRowActions({ id, name, active }: { id: string; name: str
         await toggleCategoryAction(formData);
         toast.success(active === false ? "Category activated." : "Category disabled.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not update the category.");
+        toast.error(adminActionMessage(error, "Could not update the category. Reload and check before retrying."));
       }
     });
   };
@@ -31,7 +32,7 @@ export function CategoryRowActions({ id, name, active }: { id: string; name: str
         await deleteCategoryAction(formData);
         toast.success("Category deleted.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Could not delete the category.");
+        toast.error(adminActionMessage(error, "Could not delete the category. Reload and check before retrying."));
       }
     });
   };

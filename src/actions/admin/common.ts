@@ -2,7 +2,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { isDataProviderError } from "@/lib/admin/errors";
+import { adminDigest, isDataProviderError } from "@/lib/admin/errors";
 import { idSchema } from "@/lib/admin/schemas";
 import { requireAdmin } from "@/lib/auth/server";
 
@@ -86,6 +86,7 @@ export async function adminMutation<T>(
     if (isDataProviderError(error) || error instanceof Error && error.name === "UnauthorizedError") {
       return { success: false, error: error.message };
     }
+    console.error("Unhandled admin mutation failure:", error);
     return { success: false, error: "The operation could not be completed. Please try again." };
   }
 }
@@ -104,6 +105,9 @@ export async function finishFormAction<T>(result: Promise<AdminActionResult<T>>)
           .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
           .join(" | ")
       : outcome.error;
-    throw new Error(errorDetails ?? "The operation could not be completed.");
+    const message = errorDetails ?? "The operation could not be completed.";
+    // Next.js hides thrown Server Action messages in production, so the reason
+    // rides along in `digest`, which the client does receive. See adminActionMessage.
+    throw Object.assign(new Error(message), { digest: adminDigest(message) });
   }
 }
