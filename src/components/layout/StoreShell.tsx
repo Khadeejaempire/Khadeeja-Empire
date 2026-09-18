@@ -7,15 +7,15 @@ import { UIProvider } from "@/hooks/useUI";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { SearchDrawer } from "./SearchDrawer";
+import { SearchDrawer, type SearchProduct } from "./SearchDrawer";
 import { CartDrawer } from "./CartDrawer";
 import { MobileNav } from "./MobileNav";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import type { Category, Product } from "@/types";
+import type { Category } from "@/types";
 import type { CustomerSummary } from "./Header";
 
-export function StoreShell({ children, announcements, products, categories, discoveryLinks, customer }: { children: ReactNode; announcements: string[]; products: Product[]; categories: Category[]; discoveryLinks: {label:string;href:string}[]; customer: CustomerSummary }) {
+export function StoreShell({ children, announcements, products, categories, discoveryLinks, customer }: { children: ReactNode; announcements: string[]; products: SearchProduct[]; categories: Category[]; discoveryLinks: {label:string;href:string}[]; customer: CustomerSummary }) {
   return (
     <WishlistProvider>
       <CartProvider>

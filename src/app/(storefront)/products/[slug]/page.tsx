@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -26,9 +27,12 @@ interface PageProps {
 
 export const dynamic = "force-dynamic";
 
+// Dedupes the product fetch shared by generateMetadata and the page.
+const getProduct = cache((slug: string) => getDataProvider().getProduct(slug));
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const record = await getDataProvider().getProduct(slug);
+  const record = await getProduct(slug);
   if (!record) return { title: "Product Not Found" };
   return {
     title: record.seo?.title || record.name,
@@ -39,15 +43,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
   const provider = getDataProvider();
-  const record = await provider.getProduct(slug);
+  const record = await getProduct(slug);
 
   if (!record || record.active === false) notFound();
 
   const product = toStorefrontProduct(record);
   const discount = discountPercent(product.price, product.oldPrice);
-  const allReviews = await provider.listReviews();
+  const [allReviews, productRecords, user] = await Promise.all([
+    provider.listReviews(),
+    provider.listProducts({ active: true }),
+    createClient().then((supabase) => supabase.auth.getUser()).then(({ data }) => data.user),
+  ]);
   const related = attachProductRatings(
-    (await provider.listProducts({ active: true }))
+    productRecords
       .filter(
         (p) =>
           p.id !== record.id &&
@@ -60,8 +68,6 @@ export default async function ProductPage({ params }: PageProps) {
   );
 
   const reviews = allReviews.filter((r) => r.productId === record.id);
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <div className="py-12 md:py-16">

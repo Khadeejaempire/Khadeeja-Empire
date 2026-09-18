@@ -220,8 +220,8 @@ export class SupabaseDataProvider implements DataProvider {
     const recentOrders = orders
       .slice()
       .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
-      .slice(0, 10)
-      .map((order) => this.hydrateOrder(order));
+      .slice(0, 10);
+    const recentItems = await this.listRows<OrderItemRecord>("order_items");
     return {
       totalProducts: products.length,
       activeProducts: products.filter((product) => product.active !== false).length,
@@ -234,13 +234,32 @@ export class SupabaseDataProvider implements DataProvider {
       totalSubscribers: subscribers.length,
       pendingReviews: reviews.filter((review) => review.status === "pending").length,
       unreadInquiries: inquiries.filter((inquiry) => inquiry.status === "unread").length,
-      recentOrders: await Promise.all(recentOrders),
+      recentOrders: recentOrders.map((order) => ({
+        ...order,
+        items: recentItems.filter((item) => item.orderId === order.id),
+      })),
     };
   }
 
   async listProducts(options?: ListOptions): Promise<ProductRecord[]> {
     const products = await this.listRows<ProductRecord>("products", options, ["name", "slug", "description"]);
-    return Promise.all(products.map((product) => this.hydrateProduct(product)));
+    if (products.length === 0) return products;
+
+    // Batch the child tables once instead of hydrating each product separately.
+    const [images, colors, variants, information] = await Promise.all([
+      this.listRows<ProductImageRecord>("product_images"),
+      this.listRows<ProductColorRecord>("product_colors"),
+      this.listRows<ProductVariantRecord>("product_variants"),
+      this.listRows<ProductInformationRecord>("product_information"),
+    ]);
+
+    return products.map((product) => ({
+      ...product,
+      images: images.filter((image) => image.productId === product.id),
+      colors: colors.filter((color) => color.productId === product.id),
+      variants: variants.filter((variant) => variant.productId === product.id),
+      information: information.find((item) => item.productId === product.id) ?? null,
+    }));
   }
 
   getProducts(options?: ListOptions) {
@@ -491,7 +510,12 @@ export class SupabaseDataProvider implements DataProvider {
 
   async listOrders(options?: ListOptions): Promise<OrderRecord[]> {
     const orders = await this.listRows<OrderRecord>("orders", options, ["orderNumber", "status", "paymentStatus"]);
-    return Promise.all(orders.map((order) => this.hydrateOrder(order)));
+    if (orders.length === 0) return orders;
+    const items = await this.listRows<OrderItemRecord>("order_items");
+    return orders.map((order) => ({
+      ...order,
+      items: items.filter((item) => item.orderId === order.id),
+    }));
   }
 
   async getOrder(idOrNumber: string): Promise<OrderRecord | null> {

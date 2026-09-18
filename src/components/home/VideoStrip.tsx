@@ -320,6 +320,7 @@ function ReelModal({
               src={post.image}
               alt={post.caption || "Reel preview"}
               fill
+              sizes="100vw"
               className="object-cover bg-black"
             />
           )}

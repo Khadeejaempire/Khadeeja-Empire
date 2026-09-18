@@ -9,7 +9,12 @@ import { Drawer } from "@/components/ui/Drawer";
 import { formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 
-export function SearchDrawer({ products }: { products: Product[] }) {
+export type SearchProduct = Pick<
+  Product,
+  "id" | "slug" | "name" | "category" | "collection" | "tags" | "images" | "price" | "currency"
+>;
+
+export function SearchDrawer({ products }: { products: SearchProduct[] }) {
   const { openDrawer, closeDrawer } = useUI();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);

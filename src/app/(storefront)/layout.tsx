@@ -31,10 +31,26 @@ export default async function StorefrontLayout({
   const discoveryLinks = discoveryRecords.map((entry) => ({ label: entry.label, href: entry.href }));
   const customerSummary = customer ? { name: customer.name ?? null, email: customer.email ?? null } : null;
 
+  // The search drawer only needs a lightweight projection, not full products.
+  const searchProducts = productRecords.map((record) => {
+    const product = toStorefrontProduct(record);
+    return {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      category: product.category,
+      collection: product.collection,
+      tags: product.tags,
+      images: product.images.slice(0, 1),
+      price: product.price,
+      currency: product.currency,
+    };
+  });
+
   return (
     <StoreShell
       announcements={announcements}
-      products={productRecords.map(toStorefrontProduct)}
+      products={searchProducts}
       categories={categories}
       discoveryLinks={discoveryLinks}
       customer={customerSummary}
