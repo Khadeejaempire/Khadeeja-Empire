@@ -670,8 +670,8 @@ export const products: Product[] = [
 export const heroSlides: HeroSlide[] = [
   {
     id: "hero-1",
-    title: "SHORT KURTIS",
-    subtitle: "Short Kurtis crafted in breathable cotton with modern silhouettes.",
+    title: "ETHNIC WEAR",
+    subtitle: "Everyday Elegance",
     image: "/assets/slides/girl-1.png",
     imageAlt: "Woman wearing a black-and-white zigzag tunic with light blue jeans against a dark background.",
     video: vid("3932554101906649932"),
@@ -681,8 +681,8 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "hero-2",
-    title: "CO-ORD SETS",
-    subtitle: "Co-ord sets crafted in Banaras with hand-finished details.",
+    title: "MODERN STYLES",
+    subtitle: "Casual Comfort",
     image: "/assets/slides/girl-2.png",
     imageAlt: "Woman wearing a light blue gingham halter top and pale skirt against a brown background.",
     video: vid("3895371692098630743"),
@@ -692,8 +692,8 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     id: "hero-3",
-    title: "RESORT & WHITES",
-    subtitle: "Resort & Whites for sun-soaked days and balmy evenings.",
+    title: "WOMEN'S FASHION",
+    subtitle: "Timeless Traditions",
     image: "/assets/slides/girl-3.png",
     imageAlt: "Woman wearing a pale blue embroidered camisole with black trousers against a brown background.",
     video: vid("3942701400028659556"),

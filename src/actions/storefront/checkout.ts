@@ -6,6 +6,7 @@ import { ConflictError } from "../../lib/admin/errors";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { getDataProvider } from "../../lib/data";
 import { createCashfreeOrder } from "@/lib/cashfree/payment";
+import { codOrderConfirmationContent, isBrevoConfigured, sendBrevoEmail } from "@/lib/brevo/server";
 import {
   buildCheckoutQuote,
   checkoutAddress,
@@ -142,6 +143,28 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
       await provider.incrementCouponUse(quote.couponId);
     }
     if (parsed.data.paymentMethod === "cod") {
+      if (isBrevoConfigured()) {
+        // Fire-and-forget: a failed email must never fail a placed order.
+        // ponytail: no retry queue; check Brevo transactional logs if a send fails.
+        const siteUrl = (() => {
+          try {
+            return new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "").origin;
+          } catch {
+            return "";
+          }
+        })();
+        const content = codOrderConfirmationContent(
+          order.orderNumber,
+          parsed.data.customer.name,
+          order.total.toFixed(2),
+          siteUrl
+        );
+        void sendBrevoEmail({
+          to: parsed.data.customer.email,
+          toName: parsed.data.customer.name,
+          ...content,
+        }).catch(() => {});
+      }
       return { ok: true, mode: "cod", order: publicOrder(order), replayed: false };
     }
     let attempt;

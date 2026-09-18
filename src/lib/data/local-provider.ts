@@ -29,6 +29,7 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentStatus,
   PaymentAttemptMutationInput,
   PaymentAttemptRecord,
   VerifiedPaymentResultInput,
@@ -75,6 +76,8 @@ function listRecords<T extends object>(
   let result = records.filter((record) => {
     const values = record as Record<string, unknown>;
     if (options?.active !== undefined && values.active !== options.active) return false;
+    if (options?.status !== undefined && String(values.status ?? "") !== options.status) return false;
+    if (options?.paymentStatus !== undefined && String(values.paymentStatus ?? "") !== options.paymentStatus) return false;
     if (!normalizedSearch) return true;
     return searchFields.some((field) => searchable(record[field]).includes(normalizedSearch));
   });
@@ -660,6 +663,15 @@ export class LocalDataProvider implements DataProvider {
         throw new ConflictError("An unpaid online order cannot enter fulfilment.");
       }
       Object.assign(order, { status, updatedAt: now() });
+      return current;
+    });
+    return hydrateOrder(state, find(state.orders, orderId, "Order"));
+  }
+
+  async updateOrderPaymentStatus(orderId: string, status: PaymentStatus): Promise<OrderRecord> {
+    const state = await this.update((current) => {
+      const order = find(current.orders, orderId, "Order");
+      Object.assign(order, { paymentStatus: status, updatedAt: now() });
       return current;
     });
     return hydrateOrder(state, find(state.orders, orderId, "Order"));

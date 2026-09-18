@@ -29,6 +29,22 @@ export function orderConfirmationContent(
   return { subject, html, text };
 }
 
+export function codOrderConfirmationContent(
+  orderNumber: string,
+  customerName: string,
+  amountDue: string,
+  siteUrl: string
+): { subject: string; html: string; text: string } {
+  const subject = `Order confirmation — ${orderNumber}`;
+  const text = `Hi ${customerName}, thank you for your order ${orderNumber}. Your order is confirmed. Please keep Rs ${amountDue} ready to pay on delivery. Track it at ${siteUrl}/account/orders`;
+  const html = `<p>Hi ${customerName},</p>
+<p>Thank you for your order <strong>${orderNumber}</strong>. Your order is confirmed.</p>
+<p>Please keep <strong>Rs ${amountDue}</strong> ready to pay on delivery.</p>
+<p>You can view your order any time in your <a href="${siteUrl}/account/orders">account</a>.</p>
+<p>— Khadeeja Empire</p>`;
+  return { subject, html, text };
+}
+
 export async function sendBrevoEmail(
   payload: BrevoEmailPayload,
   env: BrevoEnv = process.env

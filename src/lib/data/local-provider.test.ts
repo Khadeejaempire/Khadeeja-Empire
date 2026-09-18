@@ -132,4 +132,51 @@ describe("local data provider", () => {
     await expect(provider.getPaymentAttemptByTransactionId("KE-PAYU-1")).resolves.toMatchObject({ status: "paid", providerPaymentId: "PAYU-1" });
     expect((await provider.listCoupons({ search: "PAYU10" }))[0].usedCount).toBe(1);
   });
+
+  it("filters orders by status and payment status", async () => {
+    const provider = createLocalProvider({ filePath: await createTestFilePath() });
+    const pending = await provider.createOrder({
+      orderNumber: "KE-FILTER-1", status: "pending", paymentStatus: "pending",
+      currency: "INR", subtotal: 100, shipping: 0, discount: 0, total: 100, items: [],
+    });
+    const shipped = await provider.createOrder({
+      orderNumber: "KE-FILTER-2", status: "shipped", paymentStatus: "paid",
+      currency: "INR", subtotal: 100, shipping: 0, discount: 0, total: 100, items: [],
+    });
+
+    const all = await provider.listOrders();
+    expect(all.map((order) => order.id)).toEqual(expect.arrayContaining([pending.id, shipped.id]));
+
+    const byStatus = await provider.listOrders({ status: "shipped" });
+    expect(byStatus.map((order) => order.id)).toContain(shipped.id);
+    expect(byStatus.every((order) => order.status === "shipped")).toBe(true);
+
+    const byPayment = await provider.listOrders({ paymentStatus: "pending" });
+    expect(byPayment.map((order) => order.id)).toContain(pending.id);
+    expect(byPayment.every((order) => order.paymentStatus === "pending")).toBe(true);
+
+    const combined = await provider.listOrders({ status: "shipped", paymentStatus: "pending" });
+    expect(combined.every((order) => order.status === "shipped" && order.paymentStatus === "pending")).toBe(true);
+    expect(combined.map((order) => order.id)).not.toContain(shipped.id);
+  });
+
+  it("updates order payment status without disturbing other fields", async () => {
+    const provider = createLocalProvider({ filePath: await createTestFilePath() });
+    const order = await provider.createOrder({
+      orderNumber: "KE-PAYSTATUS-1", status: "pending", paymentStatus: "pending",
+      currency: "INR", subtotal: 250, shipping: 0, discount: 0, total: 250, items: [],
+    });
+
+    await expect(provider.updateOrderPaymentStatus(order.id, "paid")).resolves.toMatchObject({
+      id: order.id,
+      orderNumber: "KE-PAYSTATUS-1",
+      paymentStatus: "paid",
+      status: "pending",
+      total: 250,
+    });
+    await expect(provider.getOrder(order.id)).resolves.toMatchObject({
+      paymentStatus: "paid",
+      status: "pending",
+    });
+  });
 });

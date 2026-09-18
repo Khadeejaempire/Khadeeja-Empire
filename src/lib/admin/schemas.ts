@@ -212,6 +212,10 @@ export const orderStatusUpdateSchema = z.object({
   ]),
 });
 
+export const orderPaymentStatusUpdateSchema = z.object({
+  paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]),
+});
+
 export const addressMutationSchema = z.object({
   id: idSchema.optional(),
   customerId: idSchema.nullable().optional(),

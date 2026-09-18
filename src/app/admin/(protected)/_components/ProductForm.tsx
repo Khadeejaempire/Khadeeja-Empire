@@ -53,7 +53,7 @@ export function ProductForm({ product, categories }: { product?: ProductRecord; 
     </div></section>
     <section className="border-t border-stone-100 pt-6"><h2 className="mb-4 font-semibold text-stone-900">Pricing and inventory</h2><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       <label className="text-sm font-medium text-stone-700">Price<input className={inputClass} name="price" type="number" min="0" step="0.01" defaultValue={product?.price ?? ""}/></label>
-      <label className="text-sm font-medium text-stone-700">MRP / old price<input className={inputClass} name="oldPrice" type="number" min="0" step="0.01" defaultValue={product?.oldPrice ?? ""}/></label>
+      <label className="text-sm font-medium text-stone-700">MRP / old price <span className="font-normal text-stone-400">(blank = no discount)</span><input className={inputClass} name="oldPrice" type="number" min="0" step="0.01" defaultValue={product?.oldPrice ?? ""}/></label>
       <label className="text-sm font-medium text-stone-700">Availability<select className={inputClass} name="availability" defaultValue={product?.availability || "in-stock"}><option value="in-stock">In stock</option><option value="low-stock">Low stock</option><option value="out-of-stock">Out of stock</option></select></label>
       <label className="text-sm font-medium text-stone-700">Currency<input className={inputClass} name="currency" maxLength={3} defaultValue={product?.currency || "INR"}/></label>
     </div></section>

@@ -174,9 +174,9 @@ from (values
 
 insert into hero_slides (id, title, subtitle, image, image_alt, video, cta, cta_link, collection_slug, sort_order)
 values
-  ('hero-1', 'SHORT KURTIS', 'Short Kurtis crafted in breathable cotton with modern silhouettes.', '/assets/slides/girl-1.png', 'Woman wearing a black and white tunic.', '/assets/videos/3932554101906649932.mp4', 'Explore', '/collections/short-kurtis', 'short-kurtis', 0),
-  ('hero-2', 'CO-ORD SETS', 'Co-ord sets crafted in Banaras with hand-finished details.', '/assets/slides/girl-2.png', 'Woman wearing a light blue co-ord set.', '/assets/videos/3895371692098630743.mp4', 'Explore', '/collections/coord-sets', 'coord-sets', 1),
-  ('hero-3', 'RESORT AND WHITES', 'Resort and Whites for sun-soaked days and balmy evenings.', '/assets/slides/girl-3.png', 'Woman wearing a pale blue top with black trousers.', '/assets/videos/3942701400028659556.mp4', 'Explore', '/collections/resort-and-whites', 'resort-and-whites', 2)
+  ('hero-1', 'ETHNIC WEAR', 'Everyday Elegance', '/assets/slides/girl-1.png', 'Woman wearing a black and white tunic.', '/assets/videos/3932554101906649932.mp4', 'Explore', '/collections/short-kurtis', 'short-kurtis', 0),
+  ('hero-2', 'MODERN STYLES', 'Casual Comfort', '/assets/slides/girl-2.png', 'Woman wearing a light blue co-ord set.', '/assets/videos/3895371692098630743.mp4', 'Explore', '/collections/coord-sets', 'coord-sets', 1),
+  ('hero-3', 'WOMEN''S FASHION', 'Timeless Traditions', '/assets/slides/girl-3.png', 'Woman wearing a pale blue top with black trousers.', '/assets/videos/3942701400028659556.mp4', 'Explore', '/collections/resort-and-whites', 'resort-and-whites', 2)
 on conflict (id) do update set title = excluded.title, subtitle = excluded.subtitle, image = excluded.image, image_alt = excluded.image_alt, video = excluded.video, cta = excluded.cta, cta_link = excluded.cta_link, collection_slug = excluded.collection_slug, sort_order = excluded.sort_order;
 
 insert into instagram_posts (id, caption, hashtags, source_url, type, image, video, timestamp, sort_order)

@@ -43,6 +43,7 @@ export interface Product {
   images: string[];
   video?: string;
   price: number;
+  oldPrice?: number;
   currency: string;
   priceStatus: PriceStatus;
   sizes: string[];

@@ -72,6 +72,7 @@ export default async function HomePage() {
 
   return (
     <HomeTheme className={homeDisplay.variable}>
+      <HeroCarousel slides={heroSlides.map(toStorefrontHeroSlide)} />
       <BehindTheAtelier />
       <CollectionGrid categories={categories.map(toStorefrontCategory)} />
       <ExclusiveDeals />

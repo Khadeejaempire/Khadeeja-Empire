@@ -9,6 +9,13 @@ export type ShiprocketContact = {
   phone?: string | null;
 };
 
+export type ShiprocketDimensions = {
+  weight?: number;
+  length?: number;
+  breadth?: number;
+  height?: number;
+};
+
 export function buildShiprocketOrderPayload(order: OrderRecord, contact: ShiprocketContact = {}): ShiprocketOrderPayload {
   const address = order.shippingAddress ?? order.billingAddress;
   if (!address) throw new Error(`Order ${order.orderNumber} has no shipping address.`);
@@ -69,11 +76,19 @@ export function mapShiprocketStatus(
 }
 
 /** Push a paid order to Shiprocket. Fire-and-forget; never blocks payment flow. */
-export async function fulfillWithShiprocket(order: OrderRecord, contact: ShiprocketContact = {}): Promise<number> {
+export async function fulfillWithShiprocket(
+  order: OrderRecord,
+  contact: ShiprocketContact = {},
+  dimensions: ShiprocketDimensions = {}
+): Promise<number> {
   if (!isShiprocketConfigured()) {
     throw new Error("Shiprocket is not configured: set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.");
   }
   const payload = buildShiprocketOrderPayload(order, contact);
+  for (const key of ["weight", "length", "breadth", "height"] as const) {
+    const value = dimensions[key];
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) payload[key] = value;
+  }
   const pickupLocation = getShiprocketApiConfig().pickupLocation;
   if (pickupLocation) payload.pickup_location = pickupLocation;
   else delete payload.pickup_location; // Shiprocket falls back to your default pickup address

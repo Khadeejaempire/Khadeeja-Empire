@@ -60,7 +60,7 @@ export function SizeReference({ measurements }: SizeReferenceProps) {
   };
 
   return (
-    <div className="mt-4 rounded-lg border border-border bg-surface-elevated p-5 shadow-sm sm:p-6">
+    <div className="flex h-full flex-col rounded-lg border border-border bg-surface-elevated p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--color-maroon)" }}>

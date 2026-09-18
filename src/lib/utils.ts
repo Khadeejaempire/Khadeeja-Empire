@@ -8,6 +8,11 @@ export function formatPrice(price: number, currency = "INR"): string {
   }).format(price);
 }
 
+export function discountPercent(price: number, oldPrice?: number | null): number {
+  if (!oldPrice || oldPrice <= price) return 0;
+  return Math.round(((oldPrice - price) / oldPrice) * 100);
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

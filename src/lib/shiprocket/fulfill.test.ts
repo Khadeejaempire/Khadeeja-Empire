@@ -86,4 +86,24 @@ describe("shiprocket fulfill", () => {
       expect.objectContaining({ billing_email: "buyer@example.com", billing_phone: "9999999999" })
     );
   });
+
+  it("includes positive dimensions on the payload", async () => {
+    const { createShiprocketOrder } = await import("./api");
+    const { fulfillWithShiprocket } = await import("./fulfill");
+    await fulfillWithShiprocket(baseOrder, {}, { weight: 0.8, length: 30 });
+    const payload = vi.mocked(createShiprocketOrder).mock.calls.at(-1)?.[0];
+    expect(payload?.weight).toBe(0.8);
+    expect(payload?.length).toBe(30);
+    expect(payload).not.toHaveProperty("breadth");
+    expect(payload).not.toHaveProperty("height");
+  });
+
+  it("omits invalid dimensions from the payload", async () => {
+    const { createShiprocketOrder } = await import("./api");
+    const { fulfillWithShiprocket } = await import("./fulfill");
+    await fulfillWithShiprocket(baseOrder, {}, { weight: 0, length: -1 });
+    const payload = vi.mocked(createShiprocketOrder).mock.calls.at(-1)?.[0];
+    expect(payload).not.toHaveProperty("weight");
+    expect(payload).not.toHaveProperty("length");
+  });
 });

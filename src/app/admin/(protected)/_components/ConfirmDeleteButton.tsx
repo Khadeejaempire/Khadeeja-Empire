@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { adminActionMessage } from "@/lib/admin/errors";
@@ -15,6 +15,7 @@ export function ConfirmDeleteButton({
   redirectTo,
   className = "min-h-10 w-full rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 disabled:cursor-wait disabled:opacity-60",
   label = "Delete",
+  icon,
 }: {
   action: DeleteAction;
   id: string;
@@ -23,6 +24,7 @@ export function ConfirmDeleteButton({
   redirectTo?: string;
   className?: string;
   label?: string;
+  icon?: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -43,8 +45,14 @@ export function ConfirmDeleteButton({
   };
 
   return (
-    <button type="button" onClick={handleDelete} disabled={isPending} className={className}>
-      {isPending ? "Deleting…" : label}
+    <button
+      type="button"
+      onClick={handleDelete}
+      disabled={isPending}
+      className={className}
+      aria-label={icon ? label : undefined}
+    >
+      {icon ? icon : isPending ? "Deleting…" : label}
     </button>
   );
 }

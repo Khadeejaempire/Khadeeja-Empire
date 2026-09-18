@@ -31,6 +31,7 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentStatus,
   PaymentAttemptMutationInput,
   PaymentAttemptRecord,
   VerifiedPaymentResultInput,
@@ -101,6 +102,8 @@ function applyList<T extends object>(records: T[], options: ListOptions | undefi
   let result = records.filter((record) => {
     const values = record as Row;
     if (options?.active !== undefined && values.active !== options.active) return false;
+    if (options?.status !== undefined && String(values.status ?? "") !== options.status) return false;
+    if (options?.paymentStatus !== undefined && String(values.paymentStatus ?? "") !== options.paymentStatus) return false;
     if (!search) return true;
     return fields.some((field) => searchable(record[field]).includes(search));
   });
@@ -515,6 +518,10 @@ export class SupabaseDataProvider implements DataProvider {
       throw new ConflictError("An unpaid online order cannot enter fulfilment.");
     }
     return this.updateRow<OrderRecord>("orders", orderId, { status, updatedAt: now() }, "Could not update order status.");
+  }
+
+  async updateOrderPaymentStatus(orderId: string, status: PaymentStatus) {
+    return this.updateRow<OrderRecord>("orders", orderId, { paymentStatus: status, updatedAt: now() }, "Could not update payment status.");
   }
 
   async createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord> {

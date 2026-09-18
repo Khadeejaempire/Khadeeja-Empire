@@ -26,6 +26,7 @@ import type {
   OrderMutationInput,
   OrderRecord,
   OrderStatus,
+  PaymentStatus,
   PaymentAttemptMutationInput,
   PaymentAttemptRecord,
   VerifiedPaymentResultInput,
@@ -129,6 +130,7 @@ export interface DataProvider {
   getOrder(idOrNumber: string): Promise<OrderRecord | null>;
   createOrder(input: OrderMutationInput): Promise<OrderRecord>;
   updateOrderStatus(id: string, status: OrderStatus): Promise<OrderRecord>;
+  updateOrderPaymentStatus(id: string, status: PaymentStatus): Promise<OrderRecord>;
   deleteOrder(id: string): Promise<void>;
   listOrderItems(orderId: string): Promise<OrderItemRecord[]>;
   createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord>;

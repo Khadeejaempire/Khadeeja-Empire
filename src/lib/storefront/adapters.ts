@@ -47,6 +47,7 @@ export function toStorefrontProduct(record: ProductRecord): Product {
       : [fallbackImage],
     video: record.video ?? undefined,
     price: record.price ?? 0,
+    oldPrice: record.oldPrice ?? undefined,
     currency: record.currency ?? "INR",
     priceStatus: record.priceStatus ?? "demo",
     sizes: record.sizes ?? [],

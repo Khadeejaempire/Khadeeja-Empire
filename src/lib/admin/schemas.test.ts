@@ -8,6 +8,7 @@ import {
   inquiryMutationSchema,
   instagramPostMutationSchema,
   orderMutationSchema,
+  orderPaymentStatusUpdateSchema,
   orderStatusUpdateSchema,
   productInformationMutationSchema,
   productMutationSchema,
@@ -57,6 +58,10 @@ describe("admin mutation schemas", () => {
       status: "processing",
     });
     expect(() => orderStatusUpdateSchema.parse({ status: "unknown" })).toThrow();
+    expect(orderPaymentStatusUpdateSchema.parse({ paymentStatus: "paid" })).toEqual({
+      paymentStatus: "paid",
+    });
+    expect(() => orderPaymentStatusUpdateSchema.parse({ paymentStatus: "unknown" })).toThrow();
     expect(
       settingsMutationSchema.parse({
         key: "shipping.freeThreshold",

@@ -5,12 +5,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   revalidatePath: vi.fn(),
+  fulfillWithShiprocket: vi.fn(),
   provider: {
     createCategory: vi.fn(),
     updateCategory: vi.fn(),
     createProduct: vi.fn(),
     updateProduct: vi.fn(),
     updateOrderStatus: vi.fn(),
+    updateOrderPaymentStatus: vi.fn(),
+    getOrder: vi.fn(),
+    listOrderItems: vi.fn(),
+    getCustomer: vi.fn(),
   },
 }));
 
@@ -20,9 +25,10 @@ vi.mock("@/lib/admin/schemas", async () => import("../../lib/admin/schemas"));
 vi.mock("@/lib/admin/errors", async () => import("../../lib/admin/errors"));
 vi.mock("@/lib/auth/server", () => ({ requireAdmin: mocks.requireAdmin }));
 vi.mock("@/lib/data", () => ({ getDataProvider: () => mocks.provider }));
+vi.mock("@/lib/shiprocket/fulfill", () => ({ fulfillWithShiprocket: mocks.fulfillWithShiprocket }));
 
 import { saveCategoryAction } from "./categories";
-import { updateOrderStatusAction } from "./orders";
+import { pushOrderToShiprocketAction, updateOrderPaymentStatusAction, updateOrderStatusAction } from "./orders";
 import { saveProductAction } from "./products";
 
 describe("admin mutation actions", () => {
@@ -85,6 +91,77 @@ describe("admin mutation actions", () => {
 
     await updateOrderStatusAction(formData);
     expect(mocks.provider.updateOrderStatus).toHaveBeenCalledWith("order-one", "shipped");
+  });
+
+  it("pushes an order to Shiprocket with the customer contact", async () => {
+    mocks.provider.getOrder.mockResolvedValueOnce({
+      id: "order-one", orderNumber: "KE-1", customerId: "customer-1", status: "confirmed",
+      paymentStatus: "paid", subtotal: 890, shipping: 0, discount: 0, total: 890, items: [],
+    });
+    mocks.provider.listOrderItems.mockResolvedValueOnce([
+      { id: "item-1", orderId: "order-one", productName: "Kurti", quantity: 1, unitPrice: 890, totalPrice: 890 },
+    ]);
+    mocks.provider.getCustomer.mockResolvedValueOnce({ id: "customer-1", email: "buyer@example.com", phone: "9999999999" });
+    mocks.fulfillWithShiprocket.mockResolvedValueOnce(101);
+
+    const formData = new FormData();
+    formData.set("id", "order-one");
+
+    await pushOrderToShiprocketAction(formData);
+
+    expect(mocks.fulfillWithShiprocket).toHaveBeenCalledWith(
+      expect.objectContaining({ orderNumber: "KE-1", items: [expect.objectContaining({ productName: "Kurti" })] }),
+      { email: "buyer@example.com", phone: "9999999999" },
+      { weight: undefined, length: undefined, breadth: undefined, height: undefined }
+    );
+  });
+
+  it("passes valid parcel dimensions to Shiprocket and drops blanks", async () => {
+    mocks.provider.getOrder.mockResolvedValueOnce({
+      id: "order-one", orderNumber: "KE-1", status: "confirmed",
+      subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
+    });
+    mocks.fulfillWithShiprocket.mockResolvedValueOnce(101);
+
+    const formData = new FormData();
+    formData.set("id", "order-one");
+    formData.set("weight", "0.8");
+    formData.set("length", "30");
+    formData.set("breadth", "0");
+    formData.set("height", "");
+
+    await pushOrderToShiprocketAction(formData);
+
+    expect(mocks.fulfillWithShiprocket).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      { weight: 0.8, length: 30, breadth: undefined, height: undefined }
+    );
+  });
+
+  it("updates the payment status from native FormData", async () => {
+    mocks.provider.updateOrderPaymentStatus.mockResolvedValueOnce({ id: "order-one", paymentStatus: "paid" });
+
+    const formData = new FormData();
+    formData.set("id", "order-one");
+    formData.set("paymentStatus", "paid");
+
+    await updateOrderPaymentStatusAction(formData);
+
+    expect(mocks.provider.updateOrderPaymentStatus).toHaveBeenCalledWith("order-one", "paid");
+  });
+
+  it("surfaces the Shiprocket failure reason to the admin", async () => {
+    mocks.provider.getOrder.mockResolvedValueOnce({
+      id: "order-one", orderNumber: "KE-1", status: "confirmed",
+      subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
+    });
+    mocks.fulfillWithShiprocket.mockRejectedValueOnce(new Error("Shiprocket is not configured: set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD."));
+
+    const formData = new FormData();
+    formData.set("id", "order-one");
+
+    await expect(pushOrderToShiprocketAction(formData)).rejects.toThrow("Shiprocket is not configured");
   });
 
   it("does not mutate when the admin session is absent", async () => {

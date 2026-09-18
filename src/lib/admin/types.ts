@@ -16,6 +16,8 @@ export type ProductImageType = "image" | "video";
 export interface ListOptions {
   search?: string;
   active?: boolean;
+  status?: string;
+  paymentStatus?: string;
   limit?: number;
   offset?: number;
   sortBy?: string;

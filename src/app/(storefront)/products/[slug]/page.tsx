@@ -5,16 +5,18 @@ import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { ProductActions } from "@/components/product/ProductActions";
+import { ProductDescription } from "@/components/product/ProductDescription";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { SizeReference } from "@/components/product/SizeReference";
 import { StyleDetails } from "@/components/product/StyleDetails";
+import { TrustBadges } from "@/components/product/TrustBadges";
 import {
   DEFAULT_SIZE_CHART_MEASUREMENTS,
   SizeChart,
 } from "@/components/product/SizeChart";
 import { getDataProvider } from "@/lib/data";
 import { toStorefrontProduct } from "@/lib/storefront/adapters";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, discountPercent } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { ProductReviews } from "@/components/product/ProductReviews";
 
@@ -42,6 +44,7 @@ export default async function ProductPage({ params }: PageProps) {
   if (!record || record.active === false) notFound();
 
   const product = toStorefrontProduct(record);
+  const discount = discountPercent(product.price, product.oldPrice);
   const related = (await provider.listProducts({ active: true }))
     .filter(
       (p) =>
@@ -79,17 +82,21 @@ export default async function ProductPage({ params }: PageProps) {
         </nav>
 
         {/* Main Two-Column Layout */}
-        <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-          {/* LEFT COLUMN: Gallery + Size Reference */}
-          <div className="flex flex-col">
+        <div className="grid gap-10 md:grid-cols-2 md:gap-x-14 md:gap-y-8">
+          {/* Gallery */}
+          <div className="md:col-start-1 md:row-start-1">
             <ProductGallery images={product.images} video={product.video} productName={product.name} />
+          </div>
+
+          {/* Find your fit */}
+          <div className="md:col-start-1 md:row-start-2">
             <SizeReference
               measurements={record.information?.measurements ?? DEFAULT_SIZE_CHART_MEASUREMENTS}
             />
           </div>
 
-          {/* RIGHT COLUMN: Product Info */}
-          <div className="flex flex-col gap-5">
+          {/* Product Info */}
+          <div className="flex flex-col gap-5 md:col-start-2 md:row-start-1">
             {/* Category + Name + Price */}
             <div className="flex flex-col gap-2">
               <span
@@ -99,10 +106,23 @@ export default async function ProductPage({ params }: PageProps) {
                 {product.category.replace(/-/g, " ")}
               </span>
               <h1 className="text-h1 leading-tight text-ink">{product.name}</h1>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {discount > 0 ? (
+                  <span className="text-base text-muted line-through">
+                    {formatPrice(product.oldPrice!, product.currency)}
+                  </span>
+                ) : null}
                 <span className="font-display text-[1.75rem] font-semibold text-ink">
                   {formatPrice(product.price, product.currency)}
                 </span>
+                {discount > 0 ? (
+                  <span
+                    className="rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                    style={{ backgroundColor: "var(--color-maroon)" }}
+                  >
+                    {discount}% OFF
+                  </span>
+                ) : null}
                 {product.priceStatus === "demo" ? (
                   <span className="text-xs text-muted">
                     (Demo price &ndash; subject to change)
@@ -112,9 +132,7 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
 
             {/* Description */}
-            <p className="text-[0.875rem] leading-relaxed text-muted">
-              {product.description}
-            </p>
+            <ProductDescription description={product.description} />
 
             {/* Divider */}
             <div className="border-t border-border" />
@@ -124,6 +142,11 @@ export default async function ProductPage({ params }: PageProps) {
 
             {/* Style Details */}
             <StyleDetails tags={product.tags} />
+          </div>
+
+          {/* Trust Badges */}
+          <div className="md:col-start-2 md:row-start-2">
+            <TrustBadges />
           </div>
         </div>
 

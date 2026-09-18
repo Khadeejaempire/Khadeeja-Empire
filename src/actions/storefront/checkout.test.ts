@@ -2,10 +2,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUserMock, getDataProviderMock, createCashfreeOrderMock } = vi.hoisted(() => ({
+const { getUserMock, getDataProviderMock, createCashfreeOrderMock, sendBrevoEmailMock, isBrevoConfiguredMock } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
   getDataProviderMock: vi.fn(),
   createCashfreeOrderMock: vi.fn(() => ({ paymentSessionId: "session-test", environment: "sandbox" })),
+  sendBrevoEmailMock: vi.fn(() => Promise.resolve()),
+  isBrevoConfiguredMock: vi.fn(() => true),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -14,6 +16,16 @@ vi.mock("../../lib/supabase/server", () => ({
 }));
 vi.mock("../../lib/data", () => ({ getDataProvider: getDataProviderMock }));
 vi.mock("@/lib/cashfree/payment", () => ({ createCashfreeOrder: createCashfreeOrderMock }));
+vi.mock("@/lib/brevo/server", () => ({
+  isBrevoConfigured: isBrevoConfiguredMock,
+  sendBrevoEmail: sendBrevoEmailMock,
+  codOrderConfirmationContent: (orderNumber: string, customerName: string, amountDue: string, siteUrl: string) => ({
+    subject: `Order confirmation — ${orderNumber}`,
+    html: `<p>${customerName} ${amountDue} ${siteUrl}</p>`,
+    text: `${orderNumber} ${amountDue}`,
+  }),
+  orderConfirmationContent: vi.fn(),
+}));
 
 import { placeOrder, previewCouponAction } from "./checkout";
 
@@ -110,6 +122,57 @@ describe("placeOrder", () => {
     });
 
     await expect(placeOrder(input)).resolves.toMatchObject({ ok: true, replayed: true });
+  });
+
+  it("emails the customer when a new COD order is placed", async () => {
+    const createOrder = vi.fn(async (order) => ({ ...order, id: "order-1", orderNumber: order.orderNumber }));
+    getDataProviderMock.mockReturnValue({
+      listCustomers: vi.fn().mockResolvedValue([loggedInCustomer]),
+      getOrder: vi.fn().mockResolvedValue(null),
+      updateCustomer: vi.fn().mockResolvedValue({ id: "customer-1" }),
+      getProduct: vi.fn().mockResolvedValue({
+        id: "product-1",
+        slug: "demo-product",
+        name: "Demo Product",
+        price: 750,
+        currency: "INR",
+        active: true,
+        availability: "in-stock",
+        sizes: ["M"],
+      }),
+      listCoupons: vi.fn().mockResolvedValue([]),
+      listShippingRates: vi.fn().mockResolvedValue([{ id: "standard", name: "Standard", amount: 99, active: true }]),
+      createOrder,
+    });
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.khadeejaempire.com");
+
+    await placeOrder(input);
+
+    expect(sendBrevoEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "demo@example.com", toName: "Demo Customer" })
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it("does not email again on a COD replay", async () => {
+    getDataProviderMock.mockReturnValue({
+      listCustomers: vi.fn().mockResolvedValue([loggedInCustomer]),
+      getOrder: vi.fn().mockResolvedValue({
+        id: "order-existing",
+        orderNumber: "KE-DEMO-EXISTING",
+        customerId: "customer-1",
+        paymentMethod: "cod",
+        subtotal: 10,
+        shipping: 0,
+        discount: 0,
+        total: 10,
+        status: "confirmed",
+        paymentStatus: "pending",
+      }),
+    });
+
+    await expect(placeOrder(input)).resolves.toMatchObject({ ok: true, replayed: true });
+    expect(sendBrevoEmailMock).not.toHaveBeenCalled();
   });
 
   it("applies a valid coupon and increments its used count", async () => {
