@@ -31,15 +31,18 @@ export default async function OrdersPage({
   ]);
 
   const customerById = new Map(customers.map((customer) => [customer.id, customer]));
+  const newestFirst = [...orders].sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+  );
   const query = q?.trim().toLowerCase() ?? "";
   const visibleOrders = query
-    ? orders.filter((order) => {
+    ? newestFirst.filter((order) => {
         const customer = order.customerId ? customerById.get(order.customerId) : undefined;
         return [order.orderNumber, order.status, order.paymentStatus, customer?.name, customer?.email]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(query));
       })
-    : orders;
+    : newestFirst;
 
   return (
     <div>

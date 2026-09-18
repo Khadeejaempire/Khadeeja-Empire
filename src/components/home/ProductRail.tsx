@@ -12,9 +12,10 @@ import {
   Award,
   RotateCcw,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, discountPercent } from "@/lib/utils";
 import type { Product } from "@/types";
 
 const STORE_USPS = [
@@ -154,6 +155,13 @@ export function ProductRail({ products }: { products: Product[] }) {
                         {product.badge === "new" ? "NEW" : "FEATURED"}
                       </span>
                     )}
+
+                    {/* Discount */}
+                    {discountPercent(product.price, product.oldPrice) > 0 && (
+                      <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[8px] sm:text-[9px] uppercase tracking-widest font-bold text-white bg-[#7a1f1f] shadow-sm">
+                        {discountPercent(product.price, product.oldPrice)}% OFF
+                      </span>
+                    )}
                   </Link>
 
                   {/* Card Details Body */}
@@ -168,11 +176,26 @@ export function ProductRail({ products }: { products: Product[] }) {
                       >
                         {product.name}
                       </Link>
+                      {product.rating ? (
+                        <span className="mt-1 flex items-center gap-1" aria-label={`${product.rating.average.toFixed(1)} out of 5 stars`}>
+                          <span className="flex text-[#C29B47]">
+                            {[0, 1, 2, 3, 4].map((index) => (
+                              <Star key={index} size={11} fill={index < Math.round(product.rating!.average) ? "currentColor" : "none"} strokeWidth={1.5} aria-hidden="true" />
+                            ))}
+                          </span>
+                          <span className="text-[9px] text-muted">({product.rating.count})</span>
+                        </span>
+                      ) : null}
                     </div>
 
                     {/* Price & Cart Button */}
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-baseline gap-1">
+                        {discountPercent(product.price, product.oldPrice) > 0 && (
+                          <span className="text-[11px] sm:text-xs text-muted line-through">
+                            {formatPrice(product.oldPrice!, product.currency)}
+                          </span>
+                        )}
                         <span className="font-bold text-[16px] sm:text-[18px] md:text-xl text-ink">
                           {formatPrice(product.price, product.currency)}
                         </span>

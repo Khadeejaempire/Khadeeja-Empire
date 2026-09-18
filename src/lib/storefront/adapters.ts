@@ -15,6 +15,7 @@ import type {
   InstagramPostRecord,
   ProductImageRecord,
   ProductRecord,
+  ReviewRecord,
 } from "@/lib/admin/types";
 
 const asCategorySlug = (slug: string | null | undefined): CategorySlug =>
@@ -59,6 +60,23 @@ export function toStorefrontProduct(record: ProductRecord): Product {
     badge: record.badge ?? undefined,
     hoverImage: record.hoverImage ?? undefined,
   };
+}
+
+export function attachProductRatings(products: Product[], reviews: ReviewRecord[]): Product[] {
+  const totals = new Map<string, { sum: number; count: number }>();
+  for (const review of reviews) {
+    if (review.status !== "approved" || !review.productId) continue;
+    const entry = totals.get(review.productId) ?? { sum: 0, count: 0 };
+    entry.sum += review.rating || 0;
+    entry.count += 1;
+    totals.set(review.productId, entry);
+  }
+
+  return products.map((product) => {
+    const entry = totals.get(product.id);
+    if (!entry) return product;
+    return { ...product, rating: { average: entry.sum / entry.count, count: entry.count } };
+  });
 }
 
 export function toStorefrontCategory(record: CategoryRecord): Category {

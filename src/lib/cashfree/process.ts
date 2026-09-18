@@ -25,7 +25,9 @@ export async function processCashfreeReturn(transactionId: string) {
     const siteUrl = getCashfreeConfig().siteUrl;
     if (isBrevoConfigured()) {
       const content = orderConfirmationContent(order.orderNumber, attempt.customerName, attempt.amount.toFixed(2), siteUrl);
-      void sendBrevoEmail({ to: attempt.customerEmail, toName: attempt.customerName, ...content }).catch(() => {});
+      void sendBrevoEmail({ to: attempt.customerEmail, toName: attempt.customerName, ...content }).catch((error) => {
+        console.error("Cashfree order confirmation email failed:", error);
+      });
     }
     if (isShiprocketConfigured()) {
       const fullOrder = order.items ? order : await provider.getOrder(order.id);

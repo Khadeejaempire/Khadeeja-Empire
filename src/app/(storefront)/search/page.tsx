@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { getDataProvider } from "@/lib/data";
-import { toStorefrontProduct } from "@/lib/storefront/adapters";
+import { attachProductRatings, toStorefrontProduct } from "@/lib/storefront/adapters";
 
 export const metadata: Metadata = { title: "Search" };
 export const dynamic = "force-dynamic";
@@ -14,10 +14,10 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = q?.trim() || "";
-  const records = query
-    ? await getDataProvider().listProducts({ search: query, active: true })
-    : [];
-  const results = records.map(toStorefrontProduct);
+  const provider = getDataProvider();
+  const records = query ? await provider.listProducts({ search: query, active: true }) : [];
+  const reviews = query ? await provider.listReviews() : [];
+  const results = attachProductRatings(records.map(toStorefrontProduct), reviews);
 
   return (
     <div className="min-h-[85vh] bg-bg flex flex-col">

@@ -44,6 +44,7 @@ export interface Product {
   video?: string;
   price: number;
   oldPrice?: number;
+  rating?: { average: number; count: number };
   currency: string;
   priceStatus: PriceStatus;
   sizes: string[];

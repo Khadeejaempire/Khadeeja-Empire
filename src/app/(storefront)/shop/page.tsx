@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { ShopCatalog } from "@/components/shop/ShopCatalog";
 import { getDataProvider } from "@/lib/data";
 import {
+  attachProductRatings,
   toStorefrontCategory,
   toStorefrontProduct,
 } from "@/lib/storefront/adapters";
@@ -27,12 +28,13 @@ export default async function ShopPage({
   const priceUnder = rawPriceUnder ? Number(rawPriceUnder) : undefined;
 
   const provider = getDataProvider();
-  const [productRecords, categoryRecords] = await Promise.all([
+  const [productRecords, categoryRecords, reviewRecords] = await Promise.all([
     provider.listProducts({ active: true }),
     provider.listCategories({ active: true }),
+    provider.listReviews(),
   ]);
 
-  const products = productRecords.map(toStorefrontProduct);
+  const products = attachProductRatings(productRecords.map(toStorefrontProduct), reviewRecords);
   const categories = categoryRecords.map(toStorefrontCategory);
 
   return (

@@ -16,6 +16,7 @@ import { HomeFaqs } from "@/components/home/HomeFaqs";
 import { PromoPopup } from "@/components/home/PromoPopup";
 import { getDataProvider } from "@/lib/data";
 import {
+  attachProductRatings,
   toStorefrontCategory,
   toStorefrontHeroSlide,
   toStorefrontInstagramPost,
@@ -69,6 +70,7 @@ export default async function HomePage() {
   ];
 
   const promoIsCurrent = !promo.endsAt || Date.parse(promo.endsAt) > Date.now();
+  const storefrontProducts = attachProductRatings(sorted.map(toStorefrontProduct), reviews);
 
   return (
     <HomeTheme className={homeDisplay.variable}>
@@ -76,8 +78,8 @@ export default async function HomePage() {
       <BehindTheAtelier />
       <CollectionGrid categories={categories.map(toStorefrontCategory)} />
       <ExclusiveDeals />
-      <NewCollection products={sorted.slice(0, 10).map(toStorefrontProduct)} />
-      <ProductRail products={sorted.slice(0, 6).map(toStorefrontProduct)} />
+      <NewCollection products={storefrontProducts.slice(0, 10)} />
+      <ProductRail products={storefrontProducts.slice(0, 6)} />
       <BrandIntro />
       <CraftStory />
       <ValuesSection />

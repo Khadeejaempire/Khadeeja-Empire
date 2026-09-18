@@ -163,7 +163,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
           to: parsed.data.customer.email,
           toName: parsed.data.customer.name,
           ...content,
-        }).catch(() => {});
+        }).catch((error) => {
+          console.error("COD order confirmation email failed:", error);
+        });
       }
       return { ok: true, mode: "cod", order: publicOrder(order), replayed: false };
     }

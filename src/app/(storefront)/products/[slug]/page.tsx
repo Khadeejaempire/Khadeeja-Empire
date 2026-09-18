@@ -15,7 +15,7 @@ import {
   SizeChart,
 } from "@/components/product/SizeChart";
 import { getDataProvider } from "@/lib/data";
-import { toStorefrontProduct } from "@/lib/storefront/adapters";
+import { toStorefrontProduct, attachProductRatings } from "@/lib/storefront/adapters";
 import { formatPrice, discountPercent } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { ProductReviews } from "@/components/product/ProductReviews";
@@ -45,17 +45,21 @@ export default async function ProductPage({ params }: PageProps) {
 
   const product = toStorefrontProduct(record);
   const discount = discountPercent(product.price, product.oldPrice);
-  const related = (await provider.listProducts({ active: true }))
-    .filter(
-      (p) =>
-        p.id !== record.id &&
-        (p.collectionSlug === record.collectionSlug ||
-          p.categorySlug === record.categorySlug)
-    )
-    .slice(0, 4)
-    .map(toStorefrontProduct);
+  const allReviews = await provider.listReviews();
+  const related = attachProductRatings(
+    (await provider.listProducts({ active: true }))
+      .filter(
+        (p) =>
+          p.id !== record.id &&
+          (p.collectionSlug === record.collectionSlug ||
+            p.categorySlug === record.categorySlug)
+      )
+      .slice(0, 4)
+      .map(toStorefrontProduct),
+    allReviews
+  );
 
-  const reviews = (await provider.listReviews()).filter((r) => r.productId === record.id);
+  const reviews = allReviews.filter((r) => r.productId === record.id);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

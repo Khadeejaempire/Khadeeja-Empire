@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { ConflictError } from "@/lib/admin/errors";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDataProvider } from "@/lib/data";
@@ -17,7 +18,7 @@ export async function login(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: auth, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -28,11 +29,30 @@ export async function login(formData: FormData) {
 
   const dataProvider = getDataProvider();
   const customers = await dataProvider.listCustomers({ search: email });
-  const customer = customers.find(c => c.email === email);
+  let customer = customers.find(
+    (c) => c.email?.toLowerCase() === email.toLowerCase()
+  );
 
   if (customer?.status === "inactive") {
     await supabase.auth.signOut();
     return { error: "Your account is pending admin approval." };
+  }
+
+  // Self-heal: a signup that failed after the auth user was created leaves an
+  // account with no customer profile, which then cannot check out.
+  if (!customer) {
+    const fullName =
+      (auth.user?.user_metadata?.full_name as string | undefined)?.trim() ||
+      email.split("@")[0];
+    try {
+      customer = await dataProvider.createCustomer({
+        name: fullName,
+        email,
+        status: "active",
+      });
+    } catch {
+      // A conflicting phone or a race must not block an otherwise valid login.
+    }
   }
 
   revalidatePath("/", "layout");
@@ -56,12 +76,12 @@ export async function signup(formData: FormData) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName },
+    user_metadata: { full_name: fullName, phone },
   });
 
   if (createErr) {
     if (createErr.message?.toLowerCase().includes("already been registered")) {
-      return { error: "An account with this email already exists." };
+      return { error: "An account with this email already exists. Log in or reset your password." };
     }
     return { error: createErr.message };
   }
@@ -78,6 +98,12 @@ export async function signup(formData: FormData) {
       status: "active",
     });
   } catch (err) {
+    // Roll back the auth user so a failed profile (e.g. duplicate phone) does
+    // not leave the email permanently stuck as "already registered".
+    await adminClient.auth.admin.deleteUser(created.user.id).catch(() => undefined);
+    if (err instanceof ConflictError) {
+      return { error: "That phone number is already registered. Use a different number, or log in to the existing account." };
+    }
     return { error: err instanceof Error ? err.message : "Could not create customer profile." };
   }
 
@@ -107,8 +133,9 @@ export async function resetPassword(formData: FormData) {
 
   const supabase = await createClient();
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/reset-password`,
+    redirectTo: `${siteUrl}/auth/confirm`,
   });
 
   if (error) {

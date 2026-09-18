@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingBag, Check, Trash2 } from "lucide-react";
+import { Heart, ShoppingBag, Check, Trash2, Star } from "lucide-react";
 import type { Product } from "@/types";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, discountPercent } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useUI } from "@/hooks/useUI";
@@ -19,6 +19,19 @@ interface ProductCardProps {
   variant?: "grid" | "list";
   isWishlistPage?: boolean;
   onRemove?: () => void;
+}
+
+function Stars({ average, count }: { average: number; count: number }) {
+  return (
+    <span className="flex items-center gap-1" aria-label={`${average.toFixed(1)} out of 5 stars from ${count} reviews`}>
+      <span className="flex text-[#C29B47]">
+        {[0, 1, 2, 3, 4].map((index) => (
+          <Star key={index} size={12} fill={index < Math.round(average) ? "currentColor" : "none"} strokeWidth={1.5} aria-hidden="true" />
+        ))}
+      </span>
+      <span className="text-[10px] text-muted">({count})</span>
+    </span>
+  );
 }
 
 export function ProductCard({
@@ -35,6 +48,7 @@ export function ProductCard({
   const { hasItem, addItem: addWishlist, removeItem: removeWishlist } = useWishlist();
   const { openCart } = useUI();
   const hoverImage = product.hoverImage || product.images[1];
+  const discount = discountPercent(product.price, product.oldPrice);
 
   const isWishlisted = hasItem(product.id);
 
@@ -102,6 +116,13 @@ export function ProductCard({
             </span>
           )}
 
+          {/* Discount */}
+          {discount > 0 && (
+            <span className="absolute bottom-2 left-2 z-10 rounded-sm bg-[#7a1f1f] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+              {discount}% OFF
+            </span>
+          )}
+
           {/* Wishlist / Remove Button */}
           {isWishlistPage ? (
             <button
@@ -158,6 +179,10 @@ export function ProductCard({
               {product.name}
             </Link>
 
+            {product.rating ? (
+              <Stars average={product.rating.average} count={product.rating.count} />
+            ) : null}
+
             {product.description && (
               <p className="text-xs text-muted leading-relaxed line-clamp-2 mt-1">
                 {product.description}
@@ -183,8 +208,15 @@ export function ProductCard({
           {/* Bottom Actions Row */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-ink">
-                {formatPrice(product.price, product.currency)}
+              <span className="flex items-baseline gap-1.5">
+                {discount > 0 && (
+                  <span className="text-sm text-muted line-through">
+                    {formatPrice(product.oldPrice!, product.currency)}
+                  </span>
+                )}
+                <span className="text-xl font-bold text-ink">
+                  {formatPrice(product.price, product.currency)}
+                </span>
               </span>
               {product.priceStatus === "demo" && (
                 <span className="text-xs text-muted font-normal">(Demo price)</span>
@@ -273,6 +305,13 @@ export function ProductCard({
             </span>
           )}
 
+          {/* Discount */}
+          {discount > 0 && (
+            <span className="absolute bottom-2 left-2 z-10 rounded-sm bg-[#7a1f1f] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+              {discount}% OFF
+            </span>
+          )}
+
           {/* Wishlist / Remove Button */}
           {isWishlistPage ? (
             <button
@@ -324,13 +363,23 @@ export function ProductCard({
           >
             {product.name}
           </Link>
+          {product.rating ? (
+            <Stars average={product.rating.average} count={product.rating.count} />
+          ) : null}
         </div>
       </div>
 
       {/* Price & Quick Add Shopping Bag Button */}
       <div className="flex items-center justify-between pt-2 px-0.5 mt-1 border-t border-gray-100">
-        <span className="text-ink font-bold text-base">
-          {formatPrice(product.price, product.currency)}
+        <span className="flex items-baseline gap-1.5">
+          {discount > 0 && (
+            <span className="text-xs text-muted line-through">
+              {formatPrice(product.oldPrice!, product.currency)}
+            </span>
+          )}
+          <span className="text-ink font-bold text-base">
+            {formatPrice(product.price, product.currency)}
+          </span>
         </span>
 
         <button

@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { ShopCatalog } from "@/components/shop/ShopCatalog";
 import { getDataProvider } from "@/lib/data";
 import {
+  attachProductRatings,
   toStorefrontCategory,
   toStorefrontCollection,
   toStorefrontProduct,
@@ -40,6 +41,7 @@ export default async function CollectionPage({ params }: PageProps) {
   let categoryRecord = null;
   let productRecords: any[] = [];
   let categoryRecords: any[] = [];
+  let reviewRecords: any[] = [];
 
   try {
     const provider = getDataProvider();
@@ -48,11 +50,13 @@ export default async function CollectionPage({ params }: PageProps) {
       provider.getCategory(slug).catch(() => null),
       provider.listProducts({ active: true }).catch(() => []),
       provider.listCategories({ active: true }).catch(() => []),
+      provider.listReviews().catch(() => []),
     ]);
     collectionRecord = results[0];
     categoryRecord = results[1];
     productRecords = results[2] || [];
     categoryRecords = results[3] || [];
+    reviewRecords = results[4] || [];
   } catch (err) {
     console.error("Error fetching collection page data:", err);
   }
@@ -72,7 +76,7 @@ export default async function CollectionPage({ params }: PageProps) {
     categoryNames[slug] ||
     slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-  const products = productRecords.map(toStorefrontProduct);
+  const products = attachProductRatings(productRecords.map(toStorefrontProduct), reviewRecords);
   const categories = categoryRecords.map(toStorefrontCategory);
 
   return (

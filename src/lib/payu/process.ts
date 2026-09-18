@@ -47,7 +47,9 @@ export async function processPayUResponse(fields: Record<string, string>) {
         to: attempt.customerEmail,
         toName: attempt.customerName,
         ...content,
-      }).catch(() => {});
+      }).catch((error) => {
+        console.error("PayU order confirmation email failed:", error);
+      });
     }
     if (isShiprocketConfigured()) {
       // Fire-and-forget: a failed push can be retried from admin; never blocks payment.
