@@ -81,10 +81,12 @@ export function attachProductRatings(products: Product[], reviews: ReviewRecord[
 
 export function toStorefrontCategory(record: CategoryRecord): Category {
   return {
+    id: record.id,
     slug: asCategorySlug(record.slug),
     name: record.name,
     description: record.description ?? "",
-    image: record.image || fallbackImage,
+    image: record.image ?? "",
+    parentId: record.parentId ?? null,
   };
 }
 

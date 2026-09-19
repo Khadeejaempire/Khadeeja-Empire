@@ -11,6 +11,7 @@ export const siteConfig: SiteConfig = {
   ],
   email: "hello@khadeejaempire.com",
   phone: "+91 98765 43210",
+  whatsapp: "+91 98765 43210",
   instagram: "https://www.instagram.com/khadeeja_empireofficial/",
   social: [
     {
@@ -40,6 +41,7 @@ export const siteConfig: SiteConfig = {
       megaMenu: {
         title: "Customer Care",
         links: [
+          { label: "Track Order", href: "/track-order" },
           { label: "Contact Us", href: "/contact" },
           {
             label: "Refund & Shipping Policies",

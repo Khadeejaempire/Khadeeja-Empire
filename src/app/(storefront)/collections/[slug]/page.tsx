@@ -9,6 +9,7 @@ import {
   toStorefrontCollection,
   toStorefrontProduct,
 } from "@/lib/storefront/adapters";
+import { categoryGroupMap } from "@/lib/storefront/category-tree";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -78,6 +79,7 @@ export default async function CollectionPage({ params }: PageProps) {
 
   const products = attachProductRatings(productRecords.map(toStorefrontProduct), reviewRecords);
   const categories = categoryRecords.map(toStorefrontCategory);
+  const categoryGroups = categoryGroupMap(categories);
 
   return (
     <div className="py-8 md:py-12">
@@ -85,6 +87,7 @@ export default async function CollectionPage({ params }: PageProps) {
         <ShopCatalog
           products={products}
           categories={categories}
+          categoryGroups={categoryGroups}
           initialCategory={slug}
           titleOverride={displayName}
         />

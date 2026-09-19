@@ -30,6 +30,31 @@ export function CategoryForm({ category, categories }: { category?: CategoryReco
     });
   };
 
+  const excluded = new Set<string>();
+  if (category) {
+    excluded.add(category.id);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const item of categories) {
+        if (item.parentId && excluded.has(item.parentId) && !excluded.has(item.id)) {
+          excluded.add(item.id);
+          changed = true;
+        }
+      }
+    }
+  }
+  const parentOptions = categories.filter((item) => !excluded.has(item.id));
+  const depthOf = (item: CategoryRecord) => {
+    let depth = 0;
+    let current: CategoryRecord | undefined = item;
+    while (current?.parentId && depth < 10) {
+      current = categories.find((candidate) => candidate.id === current?.parentId);
+      depth += 1;
+    }
+    return depth;
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {category ? <input type="hidden" name="id" value={category.id} /> : null}
@@ -49,7 +74,7 @@ export function CategoryForm({ category, categories }: { category?: CategoryReco
         <label className="text-sm font-medium text-stone-700">Parent category
           <select className={inputClass} name="parentId" defaultValue={category?.parentId || ""}>
             <option value="">None</option>
-            {categories.filter((item) => item.id !== category?.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            {parentOptions.map((item) => <option key={item.id} value={item.id}>{"— ".repeat(depthOf(item))}{item.name}</option>)}
           </select>
         </label>
       </div>

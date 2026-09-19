@@ -78,8 +78,8 @@ async function reorderInstagramPostsMutation(input: unknown) {
 async function saveTestimonialMutation(input: unknown, id?: string) {
   return adminMutation(async () => {
     const raw = inputObject(input, {
-      booleans: ["active"], numbers: ["sortOrder"],
-      nullable: ["role", "image"],
+      booleans: ["active"], numbers: ["sortOrder", "rating"],
+      nullable: ["role"],
     }) as Record<string, unknown>;
     const testimonialId = recordId(raw, id);
     const value = testimonialMutationSchema.parse(raw);

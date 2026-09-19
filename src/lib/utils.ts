@@ -24,3 +24,9 @@ export function truncate(text: string, max: number): string {
   if (text.length <= max) return text;
   return text.slice(0, max).trimEnd() + "…";
 }
+
+export function whatsappLink(number: string, message?: string): string {
+  const digits = number.replace(/\D/g, "");
+  const query = message ? `?text=${encodeURIComponent(message)}` : "";
+  return `https://wa.me/${digits}${query}`;
+}

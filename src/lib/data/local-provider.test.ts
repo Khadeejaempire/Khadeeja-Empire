@@ -179,4 +179,21 @@ describe("local data provider", () => {
       status: "pending",
     });
   });
+
+  it("persists a testimonial star rating", async () => {
+    const provider = createLocalProvider({ filePath: await createTestFilePath() });
+    const created = await provider.createTestimonial({
+      authorName: "Sumaiya R.",
+      quote: "Fabric quality is unlike anything I've ordered online.",
+      role: "Delhi",
+      rating: 4,
+    });
+    expect(created.rating).toBe(4);
+
+    await expect(provider.updateTestimonial(created.id, { rating: 5 })).resolves.toMatchObject({
+      id: created.id,
+      rating: 5,
+      role: "Delhi",
+    });
+  });
 });

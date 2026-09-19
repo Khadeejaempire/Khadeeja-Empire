@@ -6,6 +6,7 @@ import { ChevronDown, ArrowRight, Phone, Mail, Instagram, X } from "lucide-react
 import { useUI } from "@/hooks/useUI";
 import { Drawer } from "@/components/ui/Drawer";
 import { siteConfig } from "@/content/site";
+import { buildCategoryTree } from "@/lib/storefront/category-tree";
 import type { Category } from "@/types";
 
 export function MobileNav({ categories }: { categories: Category[] }) {
@@ -90,15 +91,30 @@ export function MobileNav({ categories }: { categories: Category[] }) {
                 <span>Shop All Products</span>
                 <span className="text-xs">→</span>
               </Link>
-              {categories.map((cat) => (
-                <Link
-                  key={cat.slug}
-                  href={`/collections/${cat.slug}`}
-                  onClick={closeDrawer}
-                  className="py-2 px-3 text-[14px] sm:text-[15px] text-ink/80 hover:text-primary hover:bg-black/5 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <span>{cat.name}</span>
-                </Link>
+              {buildCategoryTree(categories).map((cat) => (
+                <div key={cat.slug} className="flex flex-col">
+                  <Link
+                    href={`/collections/${cat.slug}`}
+                    onClick={closeDrawer}
+                    className="py-2 px-3 text-[14px] sm:text-[15px] text-ink/80 hover:text-primary hover:bg-black/5 rounded-lg transition-colors flex items-center justify-between"
+                  >
+                    <span>{cat.name}</span>
+                  </Link>
+                  {cat.children.length ? (
+                    <div className="flex flex-col border-l border-border/60 ml-4 pl-2">
+                      {cat.children.map((child) => (
+                        <Link
+                          key={child.slug}
+                          href={`/collections/${child.slug}`}
+                          onClick={closeDrawer}
+                          className="py-2 px-3 text-[13px] sm:text-[14px] text-muted hover:text-primary hover:bg-black/5 rounded-lg transition-colors"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               ))}
             </div>
           </details>
@@ -114,6 +130,13 @@ export function MobileNav({ categories }: { categories: Category[] }) {
               />
             </summary>
             <div className="flex flex-col pb-3 pl-3 space-y-1">
+              <Link
+                href="/track-order"
+                onClick={closeDrawer}
+                className="py-2 px-3 text-[14px] sm:text-[15px] text-ink/80 hover:text-primary hover:bg-black/5 rounded-lg transition-colors"
+              >
+                Track Order
+              </Link>
               <Link
                 href="/contact"
                 onClick={closeDrawer}

@@ -404,7 +404,7 @@ export const testimonialMutationSchema = z.object({
   authorName: trimmedString.min(1).max(160),
   quote: trimmedString.min(1).max(2000),
   role: trimmedString.max(160).nullable().optional(),
-  image: nullableAsset,
+  rating: z.number().int().min(1).max(5).nullable().optional(),
   active: z.boolean().nullable().optional(),
   sortOrder: z.number().int().min(0).nullable().optional(),
 });

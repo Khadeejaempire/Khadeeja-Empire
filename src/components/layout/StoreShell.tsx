@@ -11,6 +11,7 @@ import { SearchDrawer, type SearchProduct } from "./SearchDrawer";
 import { CartDrawer } from "./CartDrawer";
 import { MobileNav } from "./MobileNav";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { FloatingContact } from "./FloatingContact";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { Category } from "@/types";
 import type { CustomerSummary } from "./Header";
@@ -31,6 +32,7 @@ export function StoreShell({ children, announcements, products, categories, disc
           <CartDrawer />
           <MobileNav categories={categories} />
           <MobileBottomNav customer={customer} />
+          <FloatingContact />
           <ToastContainer />
         </UIProvider>
       </CartProvider>

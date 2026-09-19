@@ -58,10 +58,12 @@ export interface Product {
 }
 
 export interface Category {
+  id?: string;
   slug: CategorySlug;
   name: string;
   description: string;
   image: string;
+  parentId?: string | null;
 }
 
 export interface Collection {
@@ -117,6 +119,7 @@ export interface SiteConfig {
   announcements: string[];
   email: string;
   phone: string;
+  whatsapp: string;
   instagram: string;
   social: {
     instagram: string;

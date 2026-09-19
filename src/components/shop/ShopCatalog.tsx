@@ -16,11 +16,42 @@ import {
 import type { Category, Product } from "@/types";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Drawer } from "@/components/ui/Drawer";
+import { buildCategoryTree } from "@/lib/storefront/category-tree";
 import { cn } from "@/lib/utils";
+
+function CategoryFilterLabel({
+  name,
+  slug,
+  checked,
+  count,
+  onToggle,
+}: {
+  name: string;
+  slug: string;
+  checked: boolean;
+  count: number;
+  onToggle: (slug: string, checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between text-sm text-ink/80 hover:text-ink cursor-pointer group">
+      <span className="flex items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onToggle(slug, e.target.checked)}
+          className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-[#A37B34]"
+        />
+        <span className={cn(checked && "font-semibold text-ink")}>{name}</span>
+      </span>
+      <span className="text-xs text-muted font-normal">({count})</span>
+    </label>
+  );
+}
 
 interface ShopCatalogProps {
   products: Product[];
   categories: Category[];
+  categoryGroups?: Record<string, string[]>;
   initialCategory?: string;
   titleOverride?: string;
   priceUnder?: number;
@@ -41,6 +72,7 @@ const ALL_FABRICS = ["Pure Cotton", "Banarasi Silk", "Linen Blend", "Chiffon", "
 export function ShopCatalog({
   products,
   categories,
+  categoryGroups,
   initialCategory,
   titleOverride,
   priceUnder,
@@ -93,6 +125,15 @@ export function ShopCatalog({
     [categories]
   );
 
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
+
+  const toggleCategory = (slug: string, checked: boolean) => {
+    setSelectedCategories(
+      checked ? [...selectedCategories, slug] : selectedCategories.filter((s) => s !== slug)
+    );
+    setCurrentPage(1);
+  };
+
   // Count items per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -106,7 +147,7 @@ export function ShopCatalog({
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // Horizontal Tab filter
-      if (selectedTab !== "all" && product.category !== selectedTab) {
+      if (selectedTab !== "all" && !(categoryGroups?.[selectedTab] ?? [selectedTab]).includes(product.category)) {
         return false;
       }
 
@@ -157,6 +198,7 @@ export function ShopCatalog({
     });
   }, [
     products,
+    categoryGroups,
     selectedTab,
     selectedCategories,
     selectedSizes,
@@ -239,40 +281,32 @@ export function ShopCatalog({
         </button>
 
         {openSections.category && (
-          <div className="flex flex-col gap-2.5 pt-3 pl-0.5">
-            {categoryTabs.filter((c) => c.slug !== "all").map((cat) => {
-              const isChecked = selectedCategories.includes(cat.slug);
-              const count = categoryCounts[cat.slug] || 0;
-
-              return (
-                <label
-                  key={cat.slug}
-                  className="flex items-center justify-between text-sm text-ink/80 hover:text-ink cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedCategories([...selectedCategories, cat.slug]);
-                        } else {
-                          setSelectedCategories(
-                            selectedCategories.filter((s) => s !== cat.slug)
-                          );
-                        }
-                        setCurrentPage(1);
-                      }}
-                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-[#A37B34]"
-                    />
-                    <span className={cn(isChecked && "font-semibold text-ink")}>
-                      {cat.name}
-                    </span>
+          <div className="flex flex-col gap-3 pt-3 pl-0.5">
+            {categoryTree.map((parent) => (
+              <div key={parent.slug} className="flex flex-col gap-2.5">
+                <CategoryFilterLabel
+                  name={parent.name}
+                  slug={parent.slug}
+                  checked={selectedCategories.includes(parent.slug)}
+                  count={categoryCounts[parent.slug] || 0}
+                  onToggle={toggleCategory}
+                />
+                {parent.children.length ? (
+                  <div className="ml-2 flex flex-col gap-2.5 border-l border-border/60 pl-4">
+                    {parent.children.map((child) => (
+                      <CategoryFilterLabel
+                        key={child.slug}
+                        name={child.name}
+                        slug={child.slug}
+                        checked={selectedCategories.includes(child.slug)}
+                        count={categoryCounts[child.slug] || 0}
+                        onToggle={toggleCategory}
+                      />
+                    ))}
                   </div>
-                  <span className="text-xs text-muted font-normal">({count})</span>
-                </label>
-              );
-            })}
+                ) : null}
+              </div>
+            ))}
           </div>
         )}
       </div>

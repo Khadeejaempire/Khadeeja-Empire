@@ -9,12 +9,15 @@ import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { siteConfig } from "@/content/site";
 import { cn } from "@/lib/utils";
+import { buildCategoryTree } from "@/lib/storefront/category-tree";
 import { IconButton } from "@/components/ui/IconButton";
 import { BrandLogo } from "./BrandLogo";
 import { logout } from "@/app/(storefront)/login/actions";
 import type { Category } from "@/types";
 
 export type CustomerSummary = { name: string | null; email: string | null } | null;
+
+type ShopLink = { label: string; href: string; children?: { label: string; href: string }[] };
 
 export function Header({ discoveryLinks, categories, customer }: { discoveryLinks: { label: string; href: string }[]; categories: Category[]; customer: CustomerSummary }) {
   const pathname = usePathname();
@@ -102,8 +105,18 @@ export function Header({ discoveryLinks, categories, customer }: { discoveryLink
               item.href &&
               (pathname === item.href ||
                 (item.href !== "/shop" && pathname.startsWith(item.href)));
-            const shopLinks = [{ label: "Shop All", href: "/shop" }, ...categories.map((c) => ({ label: c.name, href: `/collections/${c.slug}` }))];
-            const menuLinks =
+            const shopLinks: ShopLink[] = [
+              { label: "Shop All", href: "/shop" },
+              ...buildCategoryTree(categories).map((c) => ({
+                label: c.name,
+                href: `/collections/${c.slug}`,
+                children: c.children.map((child) => ({
+                  label: child.name,
+                  href: `/collections/${child.slug}`,
+                })),
+              })),
+            ];
+            const menuLinks: ShopLink[] | undefined =
               item.label === "Shop" && discoveryLinks.length
                 ? [{ label: "Shop All", href: "/shop" }, ...discoveryLinks]
                 : item.label === "Shop" && categories.length
@@ -218,6 +231,22 @@ export function Header({ discoveryLinks, categories, customer }: { discoveryLink
                               <span>{link.label}</span>
                               <span className="text-[11px] opacity-0 -translate-x-1 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all duration-200 text-primary">→</span>
                             </Link>
+                            {link.children?.length ? (
+                              <ul className="flex flex-col pb-1 pl-3">
+                                {link.children.map((child) => (
+                                  <li key={child.href}>
+                                    <Link
+                                      href={child.href}
+                                      onClick={() => setOpenMenu(null)}
+                                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11.5px] text-muted hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                                    >
+                                      <span className="h-1 w-1 rounded-full bg-current opacity-50" aria-hidden="true" />
+                                      {child.label}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
                           </li>
                         ))}
                       </ul>

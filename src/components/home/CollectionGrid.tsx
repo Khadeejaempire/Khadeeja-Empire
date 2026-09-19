@@ -97,13 +97,17 @@ export function CollectionGrid({ categories }: { categories: Category[] }) {
                 aria-label={`Explore ${cat.name}`}
               >
                 <div className="relative aspect-[4/4.5] sm:aspect-[3/4] overflow-hidden rounded-2xl md:rounded-3xl bg-surface shadow-md sm:shadow-lg group-hover:shadow-2xl group-active:shadow-sm transition-all duration-500">
-                  <Image
-                    src={cat.image}
-                    alt={cat.name}
-                    fill
-                    sizes="(max-width: 768px) 54vw, 290px"
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                  />
+                  {cat.image ? (
+                    <Image
+                      src={cat.image}
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 768px) 54vw, 290px"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#efe4d4] via-[#e6d5bd] to-[#d8b88d]" aria-hidden="true" />
+                  )}
                   
                   {/* Dark Luxury Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent transition-opacity duration-300" />

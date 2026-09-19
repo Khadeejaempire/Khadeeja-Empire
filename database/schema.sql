@@ -273,7 +273,7 @@ create table if not exists testimonials (
   author_name text not null,
   quote text not null,
   role text,
-  image text,
+  rating integer not null default 5 check (rating between 1 and 5),
   active boolean not null default true,
   sort_order integer not null default 0
 );

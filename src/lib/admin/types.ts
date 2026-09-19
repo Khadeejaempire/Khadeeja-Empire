@@ -350,7 +350,7 @@ export interface TestimonialRecord {
   authorName: string;
   quote: string;
   role?: string | null;
-  image?: string | null;
+  rating?: number | null;
   active?: boolean | null;
   sortOrder?: number | null;
 }
@@ -587,7 +587,7 @@ export interface TestimonialMutationInput {
   authorName: string;
   quote: string;
   role?: string | null;
-  image?: string | null;
+  rating?: number | null;
   active?: boolean | null;
   sortOrder?: number | null;
 }

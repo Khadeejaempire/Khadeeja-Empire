@@ -330,7 +330,7 @@ const storedTestimonialSchema = z
     authorName: z.string().min(1),
     quote: z.string().min(1),
     role: storedNullableString,
-    image: storedNullableString,
+    rating: storedNullableNumber,
     active: storedNullableBoolean,
     sortOrder: storedNullableNumber,
   })

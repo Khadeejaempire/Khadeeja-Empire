@@ -8,6 +8,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { siteConfig } from "@/content/site";
+import { whatsappLink } from "@/lib/utils";
 import { NewsletterForm } from "./NewsletterForm";
 import { BrandLogo } from "./BrandLogo";
 import type { Category } from "@/types";
@@ -92,7 +93,7 @@ export function Footer({ categories }: { categories: Category[] }) {
                 <span className="font-bold text-xs">P</span>
               </a>
               <a
-                href="https://wa.me/919999999999"
+                href={whatsappLink(siteConfig.whatsapp || siteConfig.phone)}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
@@ -137,6 +138,11 @@ export function Footer({ categories }: { categories: Category[] }) {
               <li>
                 <Link href="/contact" className="hover:text-[#b89565] transition-colors">
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/track-order" className="hover:text-[#b89565] transition-colors">
+                  Track Order
                 </Link>
               </li>
               <li>
