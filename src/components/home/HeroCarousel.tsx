@@ -32,14 +32,14 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section
-      className="relative min-h-[70dvh] md:min-h-[80vh] w-full overflow-hidden"
+      className="relative min-h-[calc(100dvh-99px)] w-full overflow-hidden"
       style={{ backgroundColor: HERO_BG }}
       role="region"
       aria-roledescription="carousel"
       aria-label="Featured collections"
     >
       <div
-        className="flex min-h-[70dvh] md:min-h-[80vh] w-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none"
+        className="flex min-h-[calc(100dvh-99px)] w-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none"
         style={{ transform: `translate3d(-${current * 100}%, 0, 0)` }}
       >
         {slides.map((s, i) => {
@@ -48,14 +48,14 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           return (
             <div
               key={s.id}
-              className="relative flex min-h-[70dvh] md:min-h-[80vh] w-full shrink-0 flex-col md:flex-row md:items-stretch"
+              className="relative flex min-h-[calc(100dvh-99px)] w-full shrink-0 flex-col md:flex-row md:items-stretch"
               aria-hidden={!isActive}
               inert={!isActive}
               role="group"
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slideCount}: ${s.title}`}
             >
-              <div className="relative h-[52dvh] w-full self-end md:h-auto md:min-h-[80vh] md:w-[46%] md:self-stretch flex items-end justify-center">
+              <div className="relative h-[52dvh] w-full self-end md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch flex items-end justify-center">
                 <Image
                   src={s.image}
                   alt={s.imageAlt}
