@@ -18,6 +18,7 @@ export type ManagedField = {
   folder?: MediaFolder;
   aspect?: string;
   fit?: "cover" | "contain";
+  hint?: string;
 };
 
 function fieldValue(record: Record<string, unknown> | undefined, name: string) {
@@ -40,7 +41,7 @@ function Editor({ fields, record }: { fields: ManagedField[]; record?: Record<st
     const id = `${record?.id || "new"}-${field.name}`;
     const inputClass = "mt-1 min-h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm outline-none focus:border-[#9c5247] focus:ring-2 focus:ring-[#9c5247]/20";
     if (field.type === "checkbox") return <label key={field.name} className="mt-6 flex min-h-10 items-center gap-2 text-sm font-medium text-stone-700"><input id={id} name={field.name} type="checkbox" defaultChecked={record ? Boolean(record[field.name]) : true} className="h-4 w-4 accent-[#9c5247]"/>{field.label}</label>;
-    if (field.type === "image" || field.type === "video") return <div key={field.name} className="text-sm font-medium text-stone-700"><MediaUpload name={field.name} label={field.label} defaultValue={fieldValue(record, field.name)} folder={field.folder || "khadeeja/content"} aspectClassName={field.aspect} fit={field.fit}/></div>;
+    if (field.type === "image" || field.type === "video") return <div key={field.name} className="text-sm font-medium text-stone-700"><MediaUpload name={field.name} label={field.label} defaultValue={fieldValue(record, field.name)} folder={field.folder || "khadeeja/content"} aspectClassName={field.aspect} fit={field.fit}/>{field.hint ? <p className="mt-1 text-xs font-normal text-stone-500">{field.hint}</p> : null}</div>;
     const value = field.type === "datetime-local" ? datetimeLocalValue(record, field.name) : fieldValue(record, field.name);
     return <label key={field.name} htmlFor={id} className={`text-sm font-medium text-stone-700 ${field.type === "textarea" ? "sm:col-span-2" : ""}`}>{field.label}{field.type === "textarea" ? <textarea id={id} name={field.name} required={field.required} placeholder={field.placeholder} defaultValue={value} className={`${inputClass} min-h-24 py-2.5`}/> : field.type === "select" ? <select id={id} name={field.name} required={field.required} defaultValue={value} className={inputClass}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input id={id} name={field.name} type={field.type || "text"} required={field.required} placeholder={field.placeholder} min={field.min} step={field.step} defaultValue={value} className={inputClass}/>}</label>;
   })}</div>;

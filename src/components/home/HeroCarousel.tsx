@@ -8,7 +8,6 @@ import type { HeroSlide } from "@/types";
 
 const ROTATE_INTERVAL_MS = 4500;
 
-const HERO_BG = "#e5dace";
 const HERO_INK = "#87221a";
 const HERO_BTN = "#7f1f18";
 const HERO_BTN_HOVER = "#6a1913";
@@ -32,14 +31,13 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section
-      className="relative min-h-[calc(100dvh-99px)] w-full overflow-hidden"
-      style={{ backgroundColor: HERO_BG }}
+      className="relative min-h-[calc(100svh-156px)] w-full overflow-hidden bg-[#f6ead4] md:min-h-[calc(100dvh-99px)] md:bg-[#e5dace]"
       role="region"
       aria-roledescription="carousel"
       aria-label="Featured collections"
     >
       <div
-        className="flex min-h-[calc(100dvh-99px)] w-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none"
+        className="flex min-h-[calc(100svh-156px)] w-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none md:min-h-[calc(100dvh-99px)]"
         style={{ transform: `translate3d(-${current * 100}%, 0, 0)` }}
       >
         {slides.map((s, i) => {
@@ -48,28 +46,28 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           return (
             <div
               key={s.id}
-              className="relative flex min-h-[calc(100dvh-99px)] w-full shrink-0 flex-col md:flex-row md:items-stretch"
+              className="relative flex min-h-[calc(100svh-156px)] w-full shrink-0 flex-col md:min-h-[calc(100dvh-99px)] md:flex-row md:items-stretch"
               aria-hidden={!isActive}
               inert={!isActive}
               role="group"
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slideCount}: ${s.title}`}
             >
-              <div className="relative h-[52dvh] w-full self-end md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch flex items-end justify-center">
+              <div className="relative min-h-0 flex-1 w-full self-end md:flex-initial md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch flex items-end justify-center">
                 <Image
                   src={s.image}
                   alt={s.imageAlt}
                   fill
                   sizes="(max-width: 768px) 100vw, 46vw"
                   className={cn(
-                    "object-contain object-bottom md:origin-bottom",
+                    "object-cover object-center md:object-contain md:object-bottom md:origin-bottom",
                     IMAGE_SCALE[i % IMAGE_SCALE.length]
                   )}
                   priority={i === 0}
                 />
               </div>
 
-              <div className="flex flex-1 items-center justify-center px-6 py-12 text-center md:py-0">
+              <div className="flex shrink-0 items-center justify-center px-6 py-4 text-center md:flex-1 md:py-0">
                 <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
                   {s.subtitle && (
                     <span

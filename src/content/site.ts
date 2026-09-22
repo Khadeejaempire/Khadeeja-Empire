@@ -3,15 +3,15 @@ import type { SiteConfig } from "@/types";
 export const siteConfig: SiteConfig = {
   name: "Khadeeja Empire",
   tagline: "Modern Indian Womenswear",
-  logo: "/assets/logo.png",
+  logo: "/assets/khadeeja_empire_logo.svg",
   announcements: [
     "PAN INDIA SHIPPING IN 20 WORKING DAYS",
     "COMPLIMENTARY SHIPPING ON ORDERS ABOVE ₹2,000",
     "HANDCRAFTED IN BANARAS — MADE TO ORDER",
   ],
   email: "hello@khadeejaempire.com",
-  phone: "+91 98765 43210",
-  whatsapp: "+91 98765 43210",
+  phone: "+91 81888 09336",
+  whatsapp: "+91 81888 09336",
   instagram: "https://www.instagram.com/khadeeja_empireofficial/",
   social: [
     {

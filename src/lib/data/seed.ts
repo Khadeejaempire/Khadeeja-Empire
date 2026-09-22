@@ -151,6 +151,7 @@ export function createSeedData(): AdminDataState {
       { id: "setting-site-logo", key: "site.logo", value: siteConfig.logo },
       { id: "setting-site-email", key: "site.email", value: siteConfig.email },
       { id: "setting-site-phone", key: "site.phone", value: siteConfig.phone },
+      { id: "setting-site-whatsapp", key: "site.whatsapp", value: siteConfig.whatsapp },
       { id: "setting-site-instagram", key: "site.instagram", value: siteConfig.instagram },
       { id: "setting-shipping-threshold", key: "shipping.freeThreshold", value: 2000 },
       { id: "setting-shipping-default", key: "shipping.defaultRate", value: 99 },
