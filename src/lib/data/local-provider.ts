@@ -172,13 +172,18 @@ function hydrateProduct(state: AdminDataState, product: ProductRecord): ProductR
   };
 }
 
+function attachSku(state: AdminDataState, items: OrderItemRecord[]): OrderItemRecord[] {
+  return items.map((item) => ({
+    ...item,
+    sku: item.productId ? (state.products.find((product) => product.id === item.productId)?.sku ?? null) : null,
+  }));
+}
+
 function hydrateOrder(state: AdminDataState, order: OrderRecord): OrderRecord {
-  return {
-    ...order,
-    items: order.items?.length
-      ? order.items
-      : state.orderItems.filter((item) => item.orderId === order.id),
-  };
+  const items = order.items?.length
+    ? order.items
+    : state.orderItems.filter((item) => item.orderId === order.id);
+  return { ...order, items: attachSku(state, items) };
 }
 
 export class LocalDataProvider implements DataProvider {
@@ -751,7 +756,7 @@ export class LocalDataProvider implements DataProvider {
 
   async listOrderItems(orderId: string): Promise<OrderItemRecord[]> {
     const state = await this.read();
-    return state.orderItems.filter((item) => item.orderId === orderId);
+    return attachSku(state, state.orderItems.filter((item) => item.orderId === orderId));
   }
 
   async listReviews(options?: ListOptions): Promise<ReviewRecord[]> {

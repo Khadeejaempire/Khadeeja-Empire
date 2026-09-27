@@ -48,6 +48,7 @@ export function ProductForm({ product, categories }: { product?: ProductRecord; 
     <section><h2 className="mb-4 font-semibold text-stone-900">Basic information</h2><div className="grid gap-5 sm:grid-cols-2">
       <label className="text-sm font-medium text-stone-700">Product name<input className={inputClass} name="name" required defaultValue={product?.name || ""}/></label>
       <label className="text-sm font-medium text-stone-700">Slug<input className={inputClass} name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" defaultValue={product?.slug || ""}/></label>
+      <label className="text-sm font-medium text-stone-700">SKU <span className="font-normal text-stone-400">(optional)</span><input className={inputClass} name="sku" defaultValue={product?.sku || ""}/></label>
       <label className="text-sm font-medium text-stone-700">Category<select className={inputClass} name="categoryId" defaultValue={product?.categoryId || ""}><option value="">Uncategorised</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
       <label className="text-sm font-medium text-stone-700">Badge<select className={inputClass} name="badge" defaultValue={product?.badge || ""}><option value="">None</option><option value="new">New</option><option value="featured">Featured</option><option value="sale">Sale</option></select></label>
     </div></section>

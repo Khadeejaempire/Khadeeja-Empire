@@ -130,6 +130,7 @@ export const productInformationMutationSchema = z.object({
 export const productMutationSchema = z.object({
   name: trimmedString.min(1).max(240),
   slug: slugSchema,
+  sku: trimmedString.max(120).nullable().optional(),
   description: trimmedString.max(10000).nullable().optional(),
   shortDescription: trimmedString.max(500).nullable().optional(),
   categoryId: idSchema.nullable().optional(),

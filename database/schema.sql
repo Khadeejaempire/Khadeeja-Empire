@@ -44,6 +44,7 @@ create table if not exists products (
   id text primary key default gen_random_uuid()::text,
   slug text not null unique,
   name text not null,
+  sku text,
   description text,
   short_description text,
   category_id text references categories(id) on delete set null,

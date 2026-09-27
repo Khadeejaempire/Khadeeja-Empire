@@ -1,149 +1,118 @@
-"use client";
-
-import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Flower2, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { CraftMark } from "@/components/ui/CraftMark";
+import { SpoolIcon, RosetteIcon } from "@/components/icons/CraftIcons";
 
-const craftImages = [
-  "/assets/images/3912472252555175961.jpg",
-  "/assets/images/3895371692098630743.jpg",
-  "/assets/images/3911022349174249793.jpg",
+const CRAFT_IMAGE = "/assets/images/craft-story.png";
+
+const features = [
+  { icon: Flower2, label: "Authentic\nBanarasi Weaves" },
+  { icon: SpoolIcon, label: "Handcrafted\nby Artisans" },
+  { icon: RosetteIcon, label: "Premium Quality\nFabrics" },
 ];
 
 export function CraftStory() {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % craftImages.length);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    if (paused || reducedMotion) return;
-    timerRef.current = setInterval(next, 5000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [paused, reducedMotion, next]);
-
   return (
-    <section className="relative bg-[#7A1F1F] overflow-hidden py-12 md:py-16 lg:py-20">
-      {/* Subtle Background Glow Elements */}
-      <div className="absolute top-0 right-0 w-full lg:w-1/2 h-full bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
+    <section className="relative bg-[#3a1a12] overflow-hidden">
+      {/* Background image, blended into the dark background */}
+      <div className="absolute inset-0 lg:right-[38%]">
+        <Image
+          src={CRAFT_IMAGE}
+          alt="Banarasi handloom weaving — every thread tells a story"
+          fill
+          sizes="(max-width: 1024px) 100vw, 62vw"
+          className="object-cover object-[38%_42%]"
+          priority
+        />
+        {/* Mobile: flat dark wash so overlaid text stays readable */}
+        <div className="absolute inset-0 bg-[#2c130d]/70 lg:hidden" />
+        {/* Desktop: fade the photo into the dark background on the right */}
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-transparent from-35% via-transparent via-65% to-[#3a1a12]" />
+      </div>
 
-      <Container className="relative z-10">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-          {/* Image Slideshow (Order 2 on Mobile, Order 1 on Desktop) */}
-          <div className="order-2 lg:order-1 w-full">
-            <div
-              className="relative aspect-[4/3.2] sm:aspect-square lg:aspect-[5/4] w-[90%] sm:w-full mx-auto rounded-xl sm:rounded-xl overflow-hidden shadow-2xl group border border-white/10 bg-surface/5"
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
-              {craftImages.map((src, i) => (
-                <div
-                  key={i}
-                  className={cnFade(i, current)}
-                  aria-hidden={i !== current}
-                >
-                  <Image
-                    src={src}
-                    alt="Craftsmanship of Banaras — every thread tells a story"
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className={`object-cover transition-transform duration-[10000ms] ease-linear ${i === current ? "scale-110" : "scale-100"}`}
-                    priority={i === 0}
-                  />
-                  {/* Subtle vignette gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#7A1F1F]/80 via-[#7A1F1F]/10 to-transparent opacity-80" />
-                </div>
-              ))}
+      {/* Decorative branch illustration, bottom-right */}
+      <svg
+        width="140"
+        height="220"
+        viewBox="0 0 140 220"
+        fill="none"
+        className="absolute bottom-0 right-0 opacity-20 pointer-events-none hidden lg:block"
+        aria-hidden="true"
+      >
+        <path d="M70 220 Q70 120 10 70" stroke="#d8b88d" strokeWidth="1.5" fill="none" />
+        <path d="M70 170 Q100 140 130 80" stroke="#d8b88d" strokeWidth="1" fill="none" />
+        <path d="M35 130 Q50 100 42 70" fill="#d8b88d" fillOpacity="0.25" stroke="#d8b88d" strokeWidth="1" />
+        <path d="M80 140 Q105 110 128 120" fill="#d8b88d" fillOpacity="0.25" stroke="#d8b88d" strokeWidth="1" />
+      </svg>
 
-              {/* Decorative & Slider Elements */}
-              <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 right-6 sm:right-8 flex items-end justify-between z-10">
-                <div className="flex gap-2">
-                  {craftImages.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrent(idx)}
-                      aria-label={`Go to slide ${idx + 1}`}
-                      className={`h-1.5 rounded-full transition-all duration-500 hover:bg-white ${
-                        idx === current ? "w-8 bg-accent" : "w-2 bg-white/30"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+      <Container className="relative z-10 py-16 sm:py-20 lg:py-28">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          {/* Spacer column reserves space for the background image on desktop */}
+          <div className="hidden lg:block" aria-hidden="true" />
 
-          {/* Text Content (Order 1 on Mobile, Order 2 on Desktop) */}
-          <div className="order-1 lg:order-2 flex flex-col items-center sm:items-start text-center sm:text-left gap-6 sm:gap-8 max-w-xl mx-auto sm:mx-0">
-            <div className="flex flex-col items-center sm:items-start gap-4 w-full">
-              <CraftMark
-                className="h-12 w-12 sm:h-14 sm:w-14 text-accent mx-auto sm:mx-0"
-                tone="turmeric"
-              />
-              <div className="flex items-center justify-center sm:justify-start gap-3">
-                <div className="h-px w-8 bg-accent/60" />
-                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-accent">
+          {/* Text Content */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-5 sm:gap-6 max-w-xl mx-auto lg:mx-0">
+            <div className="flex flex-col items-center gap-4 w-full">
+              <CraftMark className="h-12 w-12 sm:h-14 sm:w-14 text-accent" tone="turmeric" />
+              <div className="flex items-center gap-4 w-full">
+                <div className="h-px flex-1 bg-accent/40" />
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap">
                   Our Heritage
                 </p>
-                <div className="h-px w-8 bg-accent/60 sm:hidden" />
+                <div className="h-px flex-1 bg-accent/40" />
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-[2.5rem] font-display font-bold leading-[1.15] text-white tracking-tight text-center sm:text-left">
-                Every thread{" "}
-                <span className="text-accent italic font-serif font-normal">
-                  tells a story.
-                </span>
-              </h2>
             </div>
 
-            <div className="flex flex-col gap-4 sm:gap-5 text-sm sm:text-base leading-relaxed text-white/75 font-light text-center sm:text-left">
+            <h2 className="text-4xl sm:text-5xl lg:text-[3.1rem] font-display font-bold leading-[1.15] text-white tracking-tight">
+              Every thread{" "}
+              <span className="text-accent italic font-serif font-normal">
+                tells a story.
+              </span>
+            </h2>
+
+            <div className="flex flex-col gap-4 text-base sm:text-lg leading-relaxed text-white/80 font-light">
               <p>
                 Born in Banaras and made for the modern woman, Khadeeja Empire
-                bridges the gap between heritage craft and contemporary
-                wardrobes. We believe that comfort and elegance are not mutually
-                exclusive.
+                bridges the gap between heritage and today. Our sarees, suits
+                and fabrics are woven with skilled hands, rich traditions and
+                timeless art.
               </p>
               <p>
-                Each piece is designed with intention—breathable fabrics, easy
-                silhouettes, and details that honour the artisanal spirit of
-                Indian craft. From short kurtis to flowing dresses, our
-                collections are made to be worn your way.
+                Each piece is a celebration of craftsmanship, culture and the
+                soul of Banaras — designed to be a part of your story, today
+                and always.
               </p>
             </div>
 
-            <div className="pt-4 sm:pt-6 flex justify-center sm:justify-start w-full">
-              <Link
-                href="/about"
-                className="inline-flex items-center justify-center rounded-full bg-accent text-primary px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] shadow-lg hover:bg-white hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(255,255,255,0.2)] active:translate-y-0 active:scale-95"
-              >
-                Discover Our Journey
-              </Link>
+            <Link
+              href="/about"
+              className="mt-1 inline-flex items-center gap-2.5 rounded-full bg-accent text-primary px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold uppercase tracking-[0.15em] shadow-lg hover:bg-white hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(255,255,255,0.2)] active:translate-y-0 active:scale-95"
+            >
+              Discover Our Journey
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+
+            {/* Feature Icons */}
+            <div className="flex flex-wrap items-start justify-center lg:justify-start gap-x-6 gap-y-5 sm:gap-x-9 pt-6 mt-1">
+              {features.map((feature, index) => (
+                <div
+                  key={feature.label}
+                  className={`flex flex-col items-center lg:items-start gap-2.5 ${
+                    index > 0 ? "sm:pl-9 sm:border-l sm:border-white/15" : ""
+                  }`}
+                >
+                  <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 text-accent" strokeWidth={1.2} />
+                  <span className="text-xs sm:text-sm text-white/70 leading-tight whitespace-pre-line">
+                    {feature.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </Container>
     </section>
   );
-}
-
-function cnFade(index: number, current: number) {
-  return `absolute inset-0 transition-opacity duration-[1200ms] ease-in-out ${
-    index === current ? "opacity-100 z-10" : "opacity-0 z-0"
-  }`;
 }

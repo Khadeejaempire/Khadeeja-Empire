@@ -40,6 +40,7 @@ export function toStorefrontProduct(record: ProductRecord): Product {
     id: record.id,
     slug: record.slug,
     name: record.name,
+    sku: record.sku ?? undefined,
     category: categorySlug,
     collection: collectionSlug,
     description: record.description ?? record.shortDescription ?? "",

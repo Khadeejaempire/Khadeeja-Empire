@@ -3,7 +3,7 @@ import type { SiteConfig } from "@/types";
 export const siteConfig: SiteConfig = {
   name: "Khadeeja Empire",
   tagline: "Modern Indian Womenswear",
-  logo: "/assets/khadeeja_empire_logo.svg",
+  logo: "/assets/logo.png",
   announcements: [
     "PAN INDIA SHIPPING IN 20 WORKING DAYS",
     "COMPLIMENTARY SHIPPING ON ORDERS ABOVE ₹2,000",

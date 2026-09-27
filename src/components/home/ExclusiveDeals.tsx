@@ -56,11 +56,11 @@ export function ExclusiveDeals() {
           <Sparkle className="absolute top-1/4 -right-6 w-4 h-4 text-accent fill-accent hidden md:block" />
 
           {/* Card 1 */}
-          <DealCard price="799" />
+          <DealCard price={10000} label="10k" />
           {/* Card 2 */}
-          <DealCard price="899" />
+          <DealCard price={20000} label="20k" />
           {/* Card 3 */}
-          <DealCard price="999" />
+          <DealCard price={30000} label="30k" />
         </div>
 
         {/* Features Bottom */}
@@ -93,10 +93,10 @@ export function ExclusiveDeals() {
   );
 }
 
-function DealCard({ price }: { price: string }) {
+function DealCard({ price, label }: { price: number; label: string }) {
   return (
-    <Link 
-      href={`/shop?price_under=${price}`} 
+    <Link
+      href={`/shop?price_under=${price}`}
       className="group relative block aspect-[4/5] sm:aspect-auto sm:h-[224px] md:h-[256px] w-[calc(50%-8px)] sm:w-full max-w-[224px] shrink-0 mx-auto"
     >
       {/* Outer Glow on hover */}
@@ -109,7 +109,7 @@ function DealCard({ price }: { price: string }) {
           <span className="text-[10px] md:text-xs font-bold tracking-[0.15em] text-ink/80 mb-1 md:mb-1.5">UNDER</span>
           <div className="flex items-start justify-center">
             <span className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-ink leading-none">
-              <span className="text-xl md:text-2xl lg:text-3xl mr-1">₹</span>{price}
+              <span className="text-3xl md:text-4xl lg:text-5xl mr-1">₹</span>{label}
             </span>
           </div>
         </div>

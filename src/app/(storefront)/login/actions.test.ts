@@ -10,6 +10,7 @@ const {
   createUserMock,
   deleteUserMock,
   getDataProviderMock,
+  verifyEmailOtpChallengeMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn(() => {
     throw new Error("REDIRECT");
@@ -20,6 +21,7 @@ const {
   createUserMock: vi.fn(),
   deleteUserMock: vi.fn(),
   getDataProviderMock: vi.fn(),
+  verifyEmailOtpChallengeMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -36,9 +38,23 @@ vi.mock("@/lib/supabase/service-role", () => ({
   })),
 }));
 vi.mock("@/lib/data", () => ({ getDataProvider: getDataProviderMock }));
+vi.mock("@/lib/brevo/server", () => ({
+  sendBrevoEmail: vi.fn(),
+  signupOtpContent: vi.fn(() => ({ subject: "", html: "", text: "" })),
+  loginOtpContent: vi.fn(() => ({ subject: "", html: "", text: "" })),
+  passwordResetContent: vi.fn(() => ({ subject: "", html: "", text: "" })),
+}));
+vi.mock("@/lib/auth/email-otp", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/auth/email-otp")>("@/lib/auth/email-otp");
+  return {
+    ...actual,
+    createProviderEmailOtpChallengeStore: vi.fn(() => ({})),
+    verifyEmailOtpChallenge: verifyEmailOtpChallengeMock,
+  };
+});
 
 import { ConflictError } from "@/lib/admin/errors";
-import { login, signup } from "./actions";
+import { login, verifySignupOtp } from "./actions";
 
 function form(fields: Record<string, string>) {
   const data = new FormData();
@@ -95,9 +111,13 @@ describe("storefront auth actions", () => {
     getDataProviderMock.mockReturnValue({
       createCustomer: vi.fn().mockRejectedValue(new ConflictError("That record already exists.")),
     });
+    verifyEmailOtpChallengeMock.mockResolvedValue({
+      ok: true,
+      payload: JSON.stringify({ password: "secret", fullName: "X", phone: "9999999999" }),
+    });
 
-    const result = await signup(
-      form({ email: "x@y.com", password: "secret", fullName: "X", phone: "9999999999" })
+    const result = await verifySignupOtp(
+      form({ email: "x@y.com", code: "123456", challengeId: "abc" })
     );
 
     expect(deleteUserMock).toHaveBeenCalledWith("u1");

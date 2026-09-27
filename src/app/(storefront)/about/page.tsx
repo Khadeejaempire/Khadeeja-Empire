@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Our Story",
-  description: "The story of Khadeeja Empire — modern Indian womenswear rooted in craft.",
+  description: "The story of Khadeeja Empire — authentic Banarasi handloom sarees, handwoven in Banaras.",
 };
 
 export default function AboutPage() {
@@ -16,7 +16,7 @@ export default function AboutPage() {
       <section className="relative w-full h-[45vh] min-h-[380px] md:h-[55vh] md:min-h-[450px] overflow-hidden">
         <Image
           src="/assets/images/3912472252555175961.jpg"
-          alt="Khadeeja Empire craftsmanship"
+          alt="Khadeeja Empire Banarasi handloom saree craftsmanship"
           fill
           sizes="100vw"
           className="object-cover object-[center]"
@@ -33,12 +33,12 @@ export default function AboutPage() {
             </div>
             
             <h1 className="text-[40px] sm:text-5xl md:text-6xl lg:text-7xl font-display font-medium leading-[1.1] mb-6">
-              Crafted in India.<br />
-              Made for <span className="text-[#d8b88d] italic font-serif">Her.</span>
+              Woven in Banaras.<br />
+              Draped with <span className="text-[#d8b88d] italic font-serif">Pride.</span>
             </h1>
-            
+
             <p className="text-base sm:text-lg md:text-xl text-white/90 font-light mb-8">
-              Where heritage meets modern elegance.
+              Handloom silk sarees, handwoven thread by thread — a craft passed down through generations.
             </p>
 
             <div className="flex items-center gap-3">
@@ -62,31 +62,32 @@ export default function AboutPage() {
               </span>
               
               <h2 className="text-3xl sm:text-4xl md:text-[44px] leading-[1.2] md:leading-[1.15] font-display font-bold text-ink mb-6">
-                Rooted in Indian craft.<br className="hidden sm:block" />
-                Designed for the way<br className="hidden sm:block" />
-                women dress now.
+                Rooted in the handlooms<br className="hidden sm:block" />
+                of Banaras. Woven for<br className="hidden sm:block" />
+                the way women drape today.
               </h2>
-              
+
               <div className="flex items-center justify-center lg:justify-start gap-3 mb-8">
                 <div className="w-12 h-[1px] bg-[#d8b88d]/40" />
                 <Flower2 className="w-5 h-5 text-[#d8b88d]" />
                 <div className="w-12 h-[1px] bg-[#d8b88d]/40" />
               </div>
-              
+
               <div className="flex flex-col gap-6 text-[14px] md:text-[15px] text-muted leading-[1.8]">
                 <p>
-                  Khadeeja Empire is an elegant Indian womenswear brand born in Banaras.
-                  We create pieces that bridge heritage craft and contemporary wardrobes—comfortable,
-                  wearable, and made to be lived in.
+                  Khadeeja Empire brings you authentic Banarasi handloom sarees, handwoven by
+                  master weavers in the heart of Banaras. Every saree carries a legacy of
+                  craftsmanship passed down through generations of artisans.
                 </p>
                 <p>
-                  Every piece is designed with intention. We believe that comfort and elegance
-                  are not mutually exclusive, and that modern Indian dressing should feel effortless.
+                  From pure silk and tissue handloom to dupion silk weaves, each saree is adorned
+                  with intricate gold zari work, traditional buttis, and heritage-inspired borders
+                  — woven on the loom, never printed.
                 </p>
                 <p>
-                  From short kurtis to flowing dresses, from co-ord sets to resort whites, our
-                  collections celebrate the artisanal spirit of Banaras while embracing the way
-                  women dress today.
+                  We believe a handloom saree is more than fabric — it is a story of patience,
+                  skill, and heritage. Every drape from Khadeeja Empire is a tribute to the
+                  timeless art of Banarasi weaving.
                 </p>
               </div>
             </div>
@@ -97,18 +98,18 @@ export default function AboutPage() {
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-full rounded-b-xl border-[6px] border-white shadow-xl bg-surface">
                 <Image
                   src="/assets/images/3931104797681236517.jpg" // Using an elegant existing image
-                  alt="Artisanal handcrafting details"
+                  alt="Banarasi handloom saree weaving details"
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
-              
+
               {/* Floating Circular Badge */}
               <div className="absolute top-1/4 -right-4 sm:-right-10 w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#fdfaf5] border border-[#d8b88d]/30 shadow-xl flex flex-col items-center justify-center p-4 text-center z-10 hidden sm:flex">
                 <Flower2 className="w-6 h-6 text-[#d8b88d] mb-2 md:mb-3" strokeWidth={1.5} />
                 <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-[0.2em] text-ink leading-loose">
-                  CELEBRATING<br/>HERITAGE<br/><br/>EMBRACING<br/>TOMORROW
+                  HANDLOOM<br/>WOVEN<br/><br/>BANARASI<br/>HERITAGE
                 </span>
               </div>
             </div>
@@ -126,8 +127,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">01</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Easy Silhouettes</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Breathable, comfortable, made for real life.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Pure Handloom Silk</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Authentic Banarasi silk, handwoven on traditional looms.</p>
                 </div>
               </div>
 
@@ -138,8 +139,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">02</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Crafted Details</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Handcrafted in Banaras with attention to every seam.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Zari Craftsmanship</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Intricate gold zari work, woven with hand-tied precision.</p>
                 </div>
               </div>
 
@@ -150,8 +151,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">03</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Worn Your Way</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Versatile by design. Your wardrobe, your rules.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Timeless Drape</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Every saree, an heirloom for today and generations to come.</p>
                 </div>
               </div>
 

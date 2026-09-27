@@ -22,7 +22,7 @@ export function BrandLogo({ variant = "navbar", className }: BrandLogoProps) {
         src={siteConfig.logo}
         alt={`${siteConfig.name} logo`}
         fill
-        sizes={isNavbar ? "96px" : "160px"}
+        sizes={isNavbar ? "100px" : "140px"}
         className="object-contain"
         priority={isNavbar}
       />

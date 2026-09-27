@@ -37,6 +37,7 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
+  sku?: string;
   category: CategorySlug;
   collection: CollectionSlug;
   description: string;

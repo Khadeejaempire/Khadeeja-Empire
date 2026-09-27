@@ -110,6 +110,7 @@ const storedProductSchema = z
     id: storedId,
     slug: z.string().min(1),
     name: z.string().min(1),
+    sku: storedNullableString,
     description: storedNullableString,
     shortDescription: storedNullableString,
     categoryId: storedNullableString,

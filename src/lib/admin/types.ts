@@ -120,6 +120,7 @@ export interface ProductRecord {
   id: ProviderId;
   slug: string;
   name: string;
+  sku?: string | null;
   description?: string | null;
   shortDescription?: string | null;
   categoryId?: ProviderId | null;
@@ -246,6 +247,7 @@ export interface OrderItemRecord {
   productId?: ProviderId | null;
   productSlug?: string | null;
   productName: string;
+  sku?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -451,6 +453,7 @@ export interface DashboardMetrics {
 export interface ProductMutationInput {
   name: string;
   slug: string;
+  sku?: string | null;
   description?: string | null;
   shortDescription?: string | null;
   categoryId?: string | null;

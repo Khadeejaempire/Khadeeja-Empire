@@ -511,11 +511,20 @@ export class SupabaseDataProvider implements DataProvider {
   async listOrders(options?: ListOptions): Promise<OrderRecord[]> {
     const orders = await this.listRows<OrderRecord>("orders", options, ["orderNumber", "status", "paymentStatus"]);
     if (orders.length === 0) return orders;
-    const items = await this.listRows<OrderItemRecord>("order_items");
+    const items = await this.attachSku(await this.listRows<OrderItemRecord>("order_items"));
     return orders.map((order) => ({
       ...order,
       items: items.filter((item) => item.orderId === order.id),
     }));
+  }
+
+  private async attachSku(items: OrderItemRecord[]): Promise<OrderItemRecord[]> {
+    const productIds = [...new Set(items.map((item) => item.productId).filter((id): id is string => Boolean(id)))];
+    if (productIds.length === 0) return items;
+    const result = await this.client.from("products").select("id, sku").in("id", productIds);
+    if (result.error) this.translateError(result.error, "Could not read products.");
+    const skuById = new Map((result.data ?? []).map((row: { id: string; sku: string | null }) => [row.id, row.sku]));
+    return items.map((item) => ({ ...item, sku: item.productId ? (skuById.get(item.productId) ?? null) : null }));
   }
 
   async getOrder(idOrNumber: string): Promise<OrderRecord | null> {
@@ -594,7 +603,7 @@ export class SupabaseDataProvider implements DataProvider {
 
   async listOrderItems(orderId: string): Promise<OrderItemRecord[]> {
     const items = await this.listRows<OrderItemRecord>("order_items");
-    return items.filter((item) => item.orderId === orderId);
+    return this.attachSku(items.filter((item) => item.orderId === orderId));
   }
 
   listReviews(options?: ListOptions) {

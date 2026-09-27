@@ -141,6 +141,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <thead className="bg-stone-50">
                     <tr>
                       <th className={tableHead}>Product</th>
+                      <th className={tableHead}>SKU</th>
                       <th className={tableHead}>Size</th>
                       <th className={tableHead}>Color</th>
                       <th className={tableHead}>Design</th>
@@ -168,6 +169,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             )}
                             <span className="font-semibold text-stone-900">{item.productName}</span>
                           </div>
+                        </td>
+                        <td className={tableCell}>
+                          <span className="font-mono text-xs text-stone-500">{item.sku || "—"}</span>
                         </td>
                         <td className={tableCell}>{item.size || "—"}</td>
                         <td className={tableCell}>{item.color || "—"}</td>

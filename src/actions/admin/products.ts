@@ -17,7 +17,7 @@ const productOptions = {
   arrays: ["images", "sizes", "tags"],
   json: ["seo"],
   nullable: [
-    "description", "shortDescription", "categoryId", "categorySlug", "collectionId",
+    "sku", "description", "shortDescription", "categoryId", "categorySlug", "collectionId",
     "collectionSlug", "images", "video", "hoverImage", "price", "oldPrice", "currency",
     "priceStatus", "sizes", "tags", "availability", "sourcePostId", "sourceUrl", "badge", "seo",
   ],
