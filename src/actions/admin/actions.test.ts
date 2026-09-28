@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   revalidatePath: vi.fn(),
   fulfillWithShiprocket: vi.fn(),
+  syncShiprocketTracking: vi.fn(),
   provider: {
     createCategory: vi.fn(),
     updateCategory: vi.fn(),
@@ -26,10 +27,19 @@ vi.mock("@/lib/admin/schemas", async () => import("../../lib/admin/schemas"));
 vi.mock("@/lib/admin/errors", async () => import("../../lib/admin/errors"));
 vi.mock("@/lib/auth/server", () => ({ requireAdmin: mocks.requireAdmin }));
 vi.mock("@/lib/data", () => ({ getDataProvider: () => mocks.provider }));
-vi.mock("@/lib/shiprocket/fulfill", () => ({ fulfillWithShiprocket: mocks.fulfillWithShiprocket }));
+vi.mock("@/lib/shiprocket/fulfill", () => ({
+  fulfillWithShiprocket: mocks.fulfillWithShiprocket,
+  syncShiprocketTracking: mocks.syncShiprocketTracking,
+  shouldApplyMappedStatus: (current: string, mapped: string) => current !== "delivered" && current !== "cancelled" || mapped === "delivered",
+}));
 
 import { saveCategoryAction } from "./categories";
-import { pushOrderToShiprocketAction, updateOrderPaymentStatusAction, updateOrderStatusAction } from "./orders";
+import {
+  pushOrderToShiprocketAction,
+  syncShiprocketStatusAction,
+  updateOrderPaymentStatusAction,
+  updateOrderStatusAction,
+} from "./orders";
 import { saveProductAction } from "./products";
 
 describe("admin mutation actions", () => {
@@ -104,17 +114,40 @@ describe("admin mutation actions", () => {
     ]);
     mocks.provider.getCustomer.mockResolvedValueOnce({ id: "customer-1", email: "buyer@example.com", phone: "9999999999" });
     mocks.fulfillWithShiprocket.mockResolvedValueOnce({ orderId: 101, shipmentId: 202 });
+    mocks.provider.updateOrderShipment.mockResolvedValueOnce({ shiprocketOrderId: "101", shiprocketShipmentId: "202" });
 
     const formData = new FormData();
     formData.set("id", "order-one");
 
-    await pushOrderToShiprocketAction(formData);
+    const result = await pushOrderToShiprocketAction(formData);
 
     expect(mocks.fulfillWithShiprocket).toHaveBeenCalledWith(
       expect.objectContaining({ orderNumber: "KE-1", items: [expect.objectContaining({ productName: "Kurti" })] }),
       { email: "buyer@example.com", phone: "9999999999" },
       { weight: undefined, length: undefined, breadth: undefined, height: undefined }
     );
+    expect(mocks.provider.updateOrderShipment).toHaveBeenCalledWith("order-one", {
+      shiprocketOrderId: "101",
+      shiprocketShipmentId: "202",
+      shiprocketStatus: "NEW",
+    });
+    expect(result).toEqual({ success: true, data: { shiprocketOrderId: "101", shiprocketShipmentId: "202" } });
+  });
+
+  it("does not push a duplicate shipment when the order is already on Shiprocket", async () => {
+    mocks.provider.getOrder.mockResolvedValueOnce({
+      id: "order-one", orderNumber: "KE-1", status: "confirmed",
+      subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
+      shiprocketOrderId: "555", shiprocketShipmentId: "666",
+    });
+
+    const formData = new FormData();
+    formData.set("id", "order-one");
+
+    const result = await pushOrderToShiprocketAction(formData);
+
+    expect(mocks.fulfillWithShiprocket).not.toHaveBeenCalled();
+    expect(result).toEqual({ success: true, data: { shiprocketOrderId: "555", shiprocketShipmentId: "666" } });
   });
 
   it("passes valid parcel dimensions to Shiprocket and drops blanks", async () => {
@@ -123,6 +156,7 @@ describe("admin mutation actions", () => {
       subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
     });
     mocks.fulfillWithShiprocket.mockResolvedValueOnce({ orderId: 101, shipmentId: 202 });
+    mocks.provider.updateOrderShipment.mockResolvedValueOnce({ shiprocketOrderId: "101", shiprocketShipmentId: "202" });
 
     const formData = new FormData();
     formData.set("id", "order-one");
@@ -162,7 +196,38 @@ describe("admin mutation actions", () => {
     const formData = new FormData();
     formData.set("id", "order-one");
 
-    await expect(pushOrderToShiprocketAction(formData)).rejects.toThrow("Shiprocket is not configured");
+    const result = await pushOrderToShiprocketAction(formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Shiprocket is not configured");
+  });
+
+  it("syncs live tracking status and persists AWB/courier from Shiprocket", async () => {
+    mocks.provider.getOrder.mockResolvedValueOnce({
+      id: "order-one", orderNumber: "KE-1", status: "confirmed",
+      subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
+      shiprocketOrderId: "555", awbCode: null, courierName: null, shiprocketStatus: "NEW",
+    });
+    mocks.syncShiprocketTracking.mockResolvedValueOnce({
+      shiprocketStatus: "IN TRANSIT",
+      awbCode: "AWB123",
+      courierName: "Delhivery",
+      mappedStatus: "shipped",
+      currentLocation: "Bengaluru",
+      scans: [],
+    });
+
+    const result = await syncShiprocketStatusAction("order-one");
+
+    expect(mocks.provider.updateOrderShipment).toHaveBeenCalledWith(
+      "order-one",
+      expect.objectContaining({ awbCode: "AWB123", courierName: "Delhivery", shiprocketStatus: "IN TRANSIT" })
+    );
+    expect(mocks.provider.updateOrderStatus).toHaveBeenCalledWith("order-one", "shipped");
+    expect(result).toEqual({
+      success: true,
+      data: { shiprocketStatus: "IN TRANSIT", awbCode: "AWB123", courierName: "Delhivery", currentLocation: "Bengaluru", scans: [] },
+    });
   });
 
   it("does not mutate when the admin session is absent", async () => {

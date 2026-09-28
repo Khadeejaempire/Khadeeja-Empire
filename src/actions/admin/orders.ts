@@ -3,7 +3,12 @@
 import { DataProviderError, NotFoundError } from "@/lib/admin/errors";
 import { orderPaymentStatusUpdateSchema, orderStatusUpdateSchema } from "@/lib/admin/schemas";
 import { getDataProvider } from "@/lib/data";
-import { fulfillWithShiprocket, type ShiprocketDimensions } from "@/lib/shiprocket/fulfill";
+import {
+  fulfillWithShiprocket,
+  shouldApplyMappedStatus,
+  syncShiprocketTracking,
+  type ShiprocketDimensions,
+} from "@/lib/shiprocket/fulfill";
 import { adminMutation, finishFormAction, inputObject, noData, parseId } from "./common";
 
 const paths = ["/admin", "/admin/orders"];
@@ -36,23 +41,64 @@ function dimension(formData: FormData, key: string): number | undefined {
 }
 
 async function pushOrderToShiprocketMutation(id: string, dimensions: ShiprocketDimensions) {
-  return noData(await adminMutation(async () => {
+  return adminMutation(async () => {
     const provider = getDataProvider();
     const order = await provider.getOrder(parseId(id));
     if (!order) throw new NotFoundError("Order");
+    if (order.shiprocketOrderId) {
+      // Idempotent: already pushed — report what we have instead of creating a duplicate shipment.
+      return {
+        shiprocketOrderId: order.shiprocketOrderId,
+        shiprocketShipmentId: order.shiprocketShipmentId ?? null,
+      };
+    }
     const items = order.items?.length ? order.items : await provider.listOrderItems(order.id);
     const customer = order.customerId ? await provider.getCustomer(order.customerId) : null;
     try {
       const result = await fulfillWithShiprocket({ ...order, items }, { email: customer?.email, phone: customer?.phone }, dimensions);
-      await provider.updateOrderShipment(order.id, {
+      const updated = await provider.updateOrderShipment(order.id, {
         shiprocketOrderId: String(result.orderId),
         shiprocketShipmentId: String(result.shipmentId),
         shiprocketStatus: "NEW",
       });
+      return { shiprocketOrderId: updated.shiprocketOrderId ?? null, shiprocketShipmentId: updated.shiprocketShipmentId ?? null };
     } catch (error) {
       throw new DataProviderError("unknown", error instanceof Error ? error.message : "Shiprocket could not create the shipment.");
     }
-  }, [...paths, `/admin/orders/${id}`]));
+  }, [...paths, `/admin/orders/${id}`]);
+}
+
+async function syncShiprocketStatusMutation(id: string) {
+  return adminMutation(async () => {
+    const provider = getDataProvider();
+    const order = await provider.getOrder(parseId(id));
+    if (!order) throw new NotFoundError("Order");
+    if (!order.shiprocketOrderId && !order.awbCode) {
+      throw new DataProviderError("unknown", "This order has not been pushed to Shiprocket yet.");
+    }
+    try {
+      const tracked = await syncShiprocketTracking({ shiprocketOrderId: order.shiprocketOrderId, awbCode: order.awbCode });
+      const now = new Date().toISOString();
+      const applyStatus = tracked.mappedStatus ? shouldApplyMappedStatus(order.status, tracked.mappedStatus) : false;
+      await provider.updateOrderShipment(order.id, {
+        awbCode: tracked.awbCode ?? order.awbCode,
+        courierName: tracked.courierName ?? order.courierName,
+        shiprocketStatus: tracked.shiprocketStatus ?? order.shiprocketStatus,
+        shippedAt: applyStatus && tracked.mappedStatus === "shipped" ? order.shippedAt ?? now : order.shippedAt,
+        deliveredAt: applyStatus && tracked.mappedStatus === "delivered" ? now : order.deliveredAt,
+      });
+      if (applyStatus && tracked.mappedStatus) await provider.updateOrderStatus(order.id, tracked.mappedStatus);
+      return {
+        shiprocketStatus: tracked.shiprocketStatus,
+        awbCode: tracked.awbCode,
+        courierName: tracked.courierName,
+        currentLocation: tracked.currentLocation,
+        scans: tracked.scans,
+      };
+    } catch (error) {
+      throw new DataProviderError("unknown", error instanceof Error ? error.message : "Failed to sync status from Shiprocket.");
+    }
+  }, [...paths, `/admin/orders/${id}`]);
 }
 
 export async function updateOrderStatusAction(formData: FormData): Promise<void> {
@@ -63,14 +109,18 @@ export async function deleteOrderAction(formData: FormData): Promise<void> {
   await finishFormAction(deleteOrderMutation(String(formData.get("id") ?? "")));
 }
 
-export async function pushOrderToShiprocketAction(formData: FormData): Promise<void> {
+export async function pushOrderToShiprocketAction(formData: FormData) {
   const dimensions = {
     weight: dimension(formData, "weight"),
     length: dimension(formData, "length"),
     breadth: dimension(formData, "breadth"),
     height: dimension(formData, "height"),
   };
-  await finishFormAction(pushOrderToShiprocketMutation(String(formData.get("id") ?? ""), dimensions));
+  return pushOrderToShiprocketMutation(String(formData.get("id") ?? ""), dimensions);
+}
+
+export async function syncShiprocketStatusAction(orderId: string) {
+  return syncShiprocketStatusMutation(orderId);
 }
 
 export async function updateOrderPaymentStatusAction(formData: FormData): Promise<void> {

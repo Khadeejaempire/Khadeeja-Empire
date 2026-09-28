@@ -24,6 +24,7 @@ import {
 import {
   deleteOrderAction,
   pushOrderToShiprocketAction,
+  syncShiprocketStatusAction,
   updateOrderPaymentStatusAction,
   updateOrderStatusAction,
 } from "@/actions/admin/orders";
@@ -268,9 +269,9 @@ export default async function OrderDetailPage({
       </div>
 
       {/* ── Main Two-Column Grid ── */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* ── Left Column: Items, Payment, Timeline ── */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Card 1: Order Items */}
           <AdminCard className="p-5 sm:p-6 shadow-2xs border border-stone-200/90 rounded-2xl bg-white space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
@@ -545,7 +546,7 @@ export default async function OrderDetailPage({
         </div>
 
         {/* ── Right Column: Status Manager, Customer, Shipping Address, Shiprocket ── */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Box 1: Status & Payment Control */}
           <AdminCard className="p-5 sm:p-6 shadow-2xs border border-stone-200/90 rounded-2xl bg-white space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-stone-100">
@@ -585,11 +586,21 @@ export default async function OrderDetailPage({
               </div>
             </div>
 
-            <p className="text-xs text-stone-500 leading-relaxed">
-              Pushes this order to Shiprocket. You can assign a courier partner and generate pickup manifests directly.
-            </p>
+            {!order.shiprocketOrderId && (
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Pushes this order to Shiprocket. You can assign a courier partner and generate pickup manifests directly.
+              </p>
+            )}
 
-            <ShiprocketCard action={pushOrderToShiprocketAction} id={order.id} />
+            <ShiprocketCard
+              id={order.id}
+              action={pushOrderToShiprocketAction}
+              syncAction={syncShiprocketStatusAction}
+              initialShiprocketOrderId={order.shiprocketOrderId ?? null}
+              initialAwbCode={order.awbCode ?? null}
+              initialCourierName={order.courierName ?? null}
+              initialShiprocketStatus={order.shiprocketStatus ?? null}
+            />
           </AdminCard>
 
           {/* Box 3: Shipping & Delivery Address */}
