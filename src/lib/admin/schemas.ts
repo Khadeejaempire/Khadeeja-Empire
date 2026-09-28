@@ -344,6 +344,7 @@ export const heroSlideMutationSchema = z.object({
   title: trimmedString.min(1).max(240),
   subtitle: trimmedString.max(500).nullable().optional(),
   image: safeAssetUrlSchema,
+  mobileImage: nullableAsset,
   imageAlt: trimmedString.max(240).nullable().optional(),
   video: nullableAsset,
   cta: trimmedString.max(80).nullable().optional(),

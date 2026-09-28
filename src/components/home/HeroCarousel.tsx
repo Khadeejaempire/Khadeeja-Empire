@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import type { HeroSlide } from "@/types";
 
 const ROTATE_INTERVAL_MS = 4500;
@@ -11,8 +10,6 @@ const ROTATE_INTERVAL_MS = 4500;
 const HERO_INK = "#87221a";
 const HERO_BTN = "#7f1f18";
 const HERO_BTN_HOVER = "#6a1913";
-
-const IMAGE_SCALE = ["md:scale-[1.38]", "md:scale-[1.25]", "md:scale-[1.28]"];
 
 export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
@@ -53,32 +50,45 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slideCount}: ${s.title}`}
             >
-              <div className="relative min-h-0 flex-1 w-full self-end md:flex-initial md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch flex items-end justify-center">
-                <Image
-                  src={s.image}
-                  alt={s.imageAlt}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 46vw"
-                  className={cn(
-                    "object-cover object-center md:object-contain md:object-bottom md:origin-bottom",
-                    IMAGE_SCALE[i % IMAGE_SCALE.length]
-                  )}
-                  priority={i === 0}
-                />
+              <div className="relative w-full md:flex md:flex-initial md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch md:items-end md:justify-center">
+                {/* Mobile: fixed square box, always full width — zero gap. Upload a 1:1 image so nothing gets cropped; a slightly off-ratio image is cropped minimally rather than leaving a gap. */}
+                <div className="relative w-full aspect-square md:hidden">
+                  <Image
+                    src={s.mobileImage || s.image}
+                    alt={s.imageAlt}
+                    fill
+                    sizes="100vw"
+                    className="object-cover object-center"
+                    priority={i === 0}
+                  />
+                </div>
+                {/* Desktop: fills the fixed-height side panel, never cropped */}
+                <div className="hidden md:block md:h-full md:w-full">
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={s.image}
+                      alt={s.imageAlt}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 46vw"
+                      className="object-contain object-center"
+                      priority={i === 0}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex shrink-0 items-center justify-center px-6 py-4 text-center md:flex-1 md:py-0">
+              <div className="flex shrink-0 items-center justify-center px-6 py-2 sm:py-4 text-center md:flex-1 md:py-0">
                 <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
                   {s.subtitle && (
                     <span
-                      className="mb-4 text-[11px] sm:text-sm lg:text-[18px] font-medium uppercase tracking-[0.6em]"
+                      className="mb-2 sm:mb-4 text-[10px] sm:text-sm lg:text-[18px] font-medium uppercase tracking-[0.4em] sm:tracking-[0.6em]"
                       style={{ color: HERO_INK }}
                     >
                       {s.subtitle}
                     </span>
                   )}
                   <h2
-                    className="font-display uppercase text-[clamp(2.25rem,4.6vw,5.25rem)] leading-[0.95] tracking-[0.01em]"
+                    className="font-display uppercase text-[clamp(1.75rem,4.6vw,5.25rem)] leading-[0.95] tracking-[0.01em]"
                     style={{ color: HERO_INK }}
                   >
                     {s.title}
@@ -86,7 +96,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   <Link
                     href={s.ctaLink}
                     tabIndex={isActive ? undefined : -1}
-                    className="mt-8 inline-flex items-center justify-center px-12 py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] transition-colors duration-300"
+                    className="mt-4 sm:mt-8 inline-flex items-center justify-center px-12 py-3 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] transition-colors duration-300"
                     style={{ backgroundColor: HERO_BTN, color: "#ffffff" }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = HERO_BTN_HOVER)}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = HERO_BTN)}

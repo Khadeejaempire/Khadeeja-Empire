@@ -4,7 +4,10 @@ import { Flower2, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SpoolIcon, RosetteIcon } from "@/components/icons/CraftIcons";
 
-const HERO_IMAGE = "/assets/images/hero-weaving.png";
+// Separate crops for mobile vs laptop so nothing gets cut on either —
+// save a dedicated mobile-friendly image as hero-weaving-mobile.png to use a different one there.
+const HERO_IMAGE_DESKTOP = "/assets/images/hero-weaving.png";
+const HERO_IMAGE_MOBILE = "/assets/images/hero-weaving-mobile.png";
 
 const features = [
   { icon: Flower2, label: "Authentic\nBanarasi Weaves" },
@@ -12,22 +15,35 @@ const features = [
   { icon: RosetteIcon, label: "Premium Quality\nFabrics" },
 ];
 
-export function BrandIntro() {
+export function BrandIntro({
+  desktopImage,
+  mobileImage,
+}: { desktopImage?: string; mobileImage?: string } = {}) {
+  const heroDesktop = desktopImage || HERO_IMAGE_DESKTOP;
+  const heroMobile = mobileImage || HERO_IMAGE_MOBILE;
   return (
     <section className="relative overflow-hidden bg-[#f6ede0] min-h-[540px] sm:min-h-[600px] lg:min-h-[90vh] flex items-center">
-      {/* Background photo */}
+      {/* Background photo — never cropped, separate crops for mobile vs laptop */}
       <div className="absolute inset-x-0 top-[2px] bottom-[2px]">
         <Image
-          src={HERO_IMAGE}
+          src={heroMobile}
           alt="Banarasi handloom weaving craftsmanship"
           fill
           sizes="100vw"
-          className="object-cover object-[58%_45%]"
+          className="object-contain object-center lg:hidden"
+          priority
+        />
+        <Image
+          src={heroDesktop}
+          alt="Banarasi handloom weaving craftsmanship"
+          fill
+          sizes="100vw"
+          className="hidden object-contain object-[58%_45%] lg:block"
           priority
         />
         {/* Warm cream fade from the left so text stays readable */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#f6ede0] from-10% via-[#f6ede0]/75 via-45% to-transparent" />
-        <div className="absolute inset-0 bg-[#f6ede0]/60 sm:hidden" />
+        <div className="absolute inset-0 bg-[#f6ede0]/60 lg:hidden" />
       </div>
 
       {/* Decorative branch illustration, bottom-left */}

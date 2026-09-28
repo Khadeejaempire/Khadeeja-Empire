@@ -79,6 +79,20 @@ async function saveProfileMutation(input: unknown, id?: string) {
   }, ["/admin/settings/profile", "/admin"]);
 }
 
+const HERO_DESKTOP_IMAGE_KEY = "homepage.hero.desktopImage";
+const HERO_MOBILE_IMAGE_KEY = "homepage.hero.mobileImage";
+
+async function saveHeroImagesMutation(input: unknown) {
+  return adminMutation(async () => {
+    const raw = inputObject(input) as Record<string, unknown>;
+    const desktopImage = typeof raw.desktopImage === "string" ? raw.desktopImage.trim() : "";
+    const mobileImage = typeof raw.mobileImage === "string" ? raw.mobileImage.trim() : "";
+    const provider = getDataProvider();
+    await provider.upsertSetting(HERO_DESKTOP_IMAGE_KEY, desktopImage || null, "Homepage hero image (desktop).");
+    await provider.upsertSetting(HERO_MOBILE_IMAGE_KEY, mobileImage || null, "Homepage hero image (mobile).");
+  }, ["/admin/hero-images", "/"]);
+}
+
 async function saveSettingMutation(input: unknown) {
   return adminMutation(async () => {
     const value = settingsMutationSchema.parse(inputObject(input, {
@@ -152,6 +166,10 @@ export async function toggleCouponAction(formData: FormData): Promise<void> {
     String(formData.get("id") ?? ""),
     String(formData.get("active") ?? "false") === "true"
   ));
+}
+
+export async function saveHeroImagesAction(formData: FormData): Promise<void> {
+  await finishFormAction(saveHeroImagesMutation(formData));
 }
 
 export async function saveSettingAction(formData: FormData): Promise<void> {

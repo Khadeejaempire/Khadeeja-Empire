@@ -31,17 +31,29 @@ const homeDisplay = Fraunces({
 
 export default async function HomePage() {
   const provider = getDataProvider();
-  const [products, categories, heroSlides, instagramPosts, testimonials, reviews, faqs, promo] =
-    await Promise.all([
-      provider.listProducts({ active: true }),
-      provider.listCategories({ active: true }),
-      provider.listHeroSlides({ active: true }),
-      provider.listInstagramPosts({ active: true }),
-      provider.listTestimonials({ active: true }),
-      provider.listReviews(),
-      provider.listFaqs({ active: true }),
-      provider.getPromoSettings(),
-    ]);
+  const [
+    products,
+    categories,
+    heroSlides,
+    instagramPosts,
+    testimonials,
+    reviews,
+    faqs,
+    promo,
+    heroDesktopSetting,
+    heroMobileSetting,
+  ] = await Promise.all([
+    provider.listProducts({ active: true }),
+    provider.listCategories({ active: true }),
+    provider.listHeroSlides({ active: true }),
+    provider.listInstagramPosts({ active: true }),
+    provider.listTestimonials({ active: true }),
+    provider.listReviews(),
+    provider.listFaqs({ active: true }),
+    provider.getPromoSettings(),
+    provider.getSetting("homepage.hero.desktopImage"),
+    provider.getSetting("homepage.hero.mobileImage"),
+  ]);
 
   const sorted = [...products].sort((a, b) => {
     const aFeatured = a.featured === true ? 1 : 0;
@@ -79,7 +91,10 @@ export default async function HomePage() {
       <ExclusiveDeals />
       <NewCollection products={storefrontProducts.slice(0, 10)} />
       <ProductRail products={storefrontProducts.slice(0, 6)} />
-      <BrandIntro />
+      <BrandIntro
+        desktopImage={typeof heroDesktopSetting?.value === "string" ? heroDesktopSetting.value : undefined}
+        mobileImage={typeof heroMobileSetting?.value === "string" ? heroMobileSetting.value : undefined}
+      />
       <CraftStory />
       <ValuesSection />
       <PublicReviews reviews={publicReviews} />

@@ -26,7 +26,7 @@ async function saveHeroSlideMutation(input: unknown, id?: string) {
   return adminMutation(async () => {
     const raw = inputObject(input, {
       booleans: ["active"], numbers: ["sortOrder"],
-      nullable: ["subtitle", "imageAlt", "video", "cta", "ctaLink", "collectionSlug"],
+      nullable: ["subtitle", "mobileImage", "imageAlt", "video", "cta", "ctaLink", "collectionSlug"],
     }) as Record<string, unknown>;
     const slideId = recordId(raw, id);
     const value = heroSlideMutationSchema.parse(raw);

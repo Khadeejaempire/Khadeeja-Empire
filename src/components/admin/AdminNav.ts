@@ -48,6 +48,7 @@ export const adminNavSections: AdminNavSection[] = [
     label: "Storefront",
     items: [
       { label: "Hero Slides", href: "/admin/hero-slides", icon: Image },
+      { label: "Hero Images", href: "/admin/hero-images", icon: Image },
       { label: "Instagram Gallery", href: "/admin/instagram", icon: Instagram },
       { label: "Promo Popup", href: "/admin/home-banner", icon: Gift },
       { label: "Home Reviews", href: "/admin/home-reviews", icon: Star },

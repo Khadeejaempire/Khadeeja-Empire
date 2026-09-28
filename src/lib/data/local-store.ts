@@ -299,6 +299,7 @@ const storedHeroSlideSchema = z
     title: z.string().min(1),
     subtitle: storedNullableString,
     image: z.string().min(1),
+    mobileImage: storedNullableString,
     imageAlt: storedNullableString,
     video: storedNullableString,
     cta: storedNullableString,

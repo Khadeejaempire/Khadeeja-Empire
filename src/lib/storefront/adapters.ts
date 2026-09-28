@@ -121,6 +121,7 @@ export function toStorefrontHeroSlide(record: HeroSlideRecord): HeroSlide {
     title: record.title,
     subtitle: record.subtitle ?? "",
     image: record.image,
+    mobileImage: record.mobileImage ?? undefined,
     imageAlt: record.imageAlt ?? record.title,
     video: record.video ?? undefined,
     cta: record.cta ?? "Explore",

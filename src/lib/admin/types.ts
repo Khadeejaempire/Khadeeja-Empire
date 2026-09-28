@@ -324,6 +324,7 @@ export interface HeroSlideRecord {
   title: string;
   subtitle?: string | null;
   image: string;
+  mobileImage?: string | null;
   imageAlt?: string | null;
   video?: string | null;
   cta?: string | null;
@@ -564,6 +565,7 @@ export interface HeroSlideMutationInput {
   title: string;
   subtitle?: string | null;
   image: string;
+  mobileImage?: string | null;
   imageAlt?: string | null;
   video?: string | null;
   cta?: string | null;

@@ -92,6 +92,7 @@ export interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
+  mobileImage?: string;
   imageAlt: string;
   video?: string;
   cta: string;

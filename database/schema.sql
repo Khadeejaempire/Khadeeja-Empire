@@ -246,6 +246,7 @@ create table if not exists hero_slides (
   title text not null,
   subtitle text,
   image text not null,
+  mobile_image text,
   image_alt text,
   video text,
   cta text,
