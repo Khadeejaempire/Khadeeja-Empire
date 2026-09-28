@@ -52,3 +52,6 @@ next-env.d.ts
 
 dev-server.log
 dev.log
+
+# Claude Code local overrides
+.claude/settings.local.json

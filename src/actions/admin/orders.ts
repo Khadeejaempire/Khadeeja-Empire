@@ -43,7 +43,12 @@ async function pushOrderToShiprocketMutation(id: string, dimensions: ShiprocketD
     const items = order.items?.length ? order.items : await provider.listOrderItems(order.id);
     const customer = order.customerId ? await provider.getCustomer(order.customerId) : null;
     try {
-      await fulfillWithShiprocket({ ...order, items }, { email: customer?.email, phone: customer?.phone }, dimensions);
+      const result = await fulfillWithShiprocket({ ...order, items }, { email: customer?.email, phone: customer?.phone }, dimensions);
+      await provider.updateOrderShipment(order.id, {
+        shiprocketOrderId: String(result.orderId),
+        shiprocketShipmentId: String(result.shipmentId),
+        shiprocketStatus: "NEW",
+      });
     } catch (error) {
       throw new DataProviderError("unknown", error instanceof Error ? error.message : "Shiprocket could not create the shipment.");
     }

@@ -30,6 +30,7 @@ import type {
   OrderItemRecord,
   OrderMutationInput,
   OrderRecord,
+  OrderShipmentPatch,
   OrderStatus,
   PaymentStatus,
   PaymentAttemptMutationInput,
@@ -555,6 +556,10 @@ export class SupabaseDataProvider implements DataProvider {
 
   async updateOrderPaymentStatus(orderId: string, status: PaymentStatus) {
     return this.updateRow<OrderRecord>("orders", orderId, { paymentStatus: status, updatedAt: now() }, "Could not update payment status.");
+  }
+
+  async updateOrderShipment(orderId: string, patch: OrderShipmentPatch) {
+    return this.updateRow<OrderRecord>("orders", orderId, { ...patch, updatedAt: now() }, "Could not update shipment details.");
   }
 
   async createPaymentAttempt(input: PaymentAttemptMutationInput): Promise<PaymentAttemptRecord> {

@@ -28,6 +28,7 @@ import type {
   OrderItemRecord,
   OrderMutationInput,
   OrderRecord,
+  OrderShipmentPatch,
   OrderStatus,
   PaymentStatus,
   PaymentAttemptMutationInput,
@@ -677,6 +678,15 @@ export class LocalDataProvider implements DataProvider {
     const state = await this.update((current) => {
       const order = find(current.orders, orderId, "Order");
       Object.assign(order, { paymentStatus: status, updatedAt: now() });
+      return current;
+    });
+    return hydrateOrder(state, find(state.orders, orderId, "Order"));
+  }
+
+  async updateOrderShipment(orderId: string, patch: OrderShipmentPatch): Promise<OrderRecord> {
+    const state = await this.update((current) => {
+      const order = find(current.orders, orderId, "Order");
+      Object.assign(order, { ...patch, updatedAt: now() });
       return current;
     });
     return hydrateOrder(state, find(state.orders, orderId, "Order"));

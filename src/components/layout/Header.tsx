@@ -62,7 +62,7 @@ export function Header({ discoveryLinks, categories, customer }: { discoveryLink
   return (
     <header
       className={cn(
-        "sticky-header site-header transition-all duration-300",
+        "print:hidden sticky-header site-header transition-all duration-300",
         scrolled
           ? "bg-surface/95 backdrop-blur-md shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] border-b border-border/80"
           : "bg-surface/80 backdrop-blur-sm border-b border-border/40"

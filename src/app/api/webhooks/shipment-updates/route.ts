@@ -2,15 +2,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { timingSafeEqual } from "node:crypto";
 import { getDataProvider } from "@/lib/data";
-import { mapShiprocketStatus } from "@/lib/shiprocket/fulfill";
+import { mapShiprocketStatus, shouldApplyMappedStatus } from "@/lib/shiprocket/fulfill";
 
 export const runtime = "nodejs";
 
 const webhookSchema = z.object({
   awb: z.string().optional(),
   current_status: z.string().optional(),
+  shipment_status: z.string().optional(),
+  courier_name: z.string().optional(),
   sr_order_id: z.union([z.number(), z.string()]).optional(),
-  order_id: z.string().optional(),
+  order_id: z.union([z.number(), z.string()]).optional(),
+  channel_order_id: z.union([z.number(), z.string()]).optional(),
 }).passthrough();
 
 function secretEquals(left: string, right: string): boolean {
@@ -42,9 +45,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid webhook payload." }, { status: 400 });
   }
 
-  const orderNumber = parsed.data.order_id ?? "";
-  const mapped = mapShiprocketStatus(parsed.data.current_status, "");
-  if (!orderNumber || !mapped) {
+  // Shiprocket's webhook payload carries two different identifiers, and they
+  // are NOT interchangeable: `channel_order_id` is the reference we gave
+  // Shiprocket when creating the order (order_id: order.orderNumber in
+  // buildShiprocketOrderPayload), while `order_id` here is Shiprocket's OWN
+  // internal numeric order id, which we never store and cannot match on.
+  const orderNumber = parsed.data.channel_order_id != null ? String(parsed.data.channel_order_id) : "";
+  if (!orderNumber) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
@@ -52,14 +59,20 @@ export async function POST(request: Request) {
   const order = await provider.getOrder(orderNumber);
   if (!order) return NextResponse.json({ ok: true, ignored: true });
 
-  // Delivered/RTO outrank in-transit states; never downgrade a delivered order.
-  if (order.status === "delivered" && mapped !== "delivered") {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-  if (
-    (order.status !== "delivered" && order.status !== "cancelled") ||
-    (order.status === "cancelled" && mapped === "delivered")
-  ) {
+  const now = new Date().toISOString();
+  const mapped = mapShiprocketStatus(parsed.data.current_status, parsed.data.shipment_status ?? "");
+  const applyStatus = mapped ? shouldApplyMappedStatus(order.status, mapped) : false;
+
+  await provider.updateOrderShipment(order.id, {
+    shiprocketOrderId: parsed.data.sr_order_id != null ? String(parsed.data.sr_order_id) : order.shiprocketOrderId,
+    awbCode: parsed.data.awb ?? order.awbCode,
+    courierName: parsed.data.courier_name ?? order.courierName,
+    shiprocketStatus: parsed.data.current_status ?? null,
+    shippedAt: applyStatus && mapped === "shipped" ? order.shippedAt ?? now : order.shippedAt,
+    deliveredAt: applyStatus && mapped === "delivered" ? now : order.deliveredAt,
+  });
+
+  if (applyStatus && mapped) {
     await provider.updateOrderStatus(order.id, mapped);
   }
   return NextResponse.json({ ok: true });

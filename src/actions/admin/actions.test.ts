@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
     updateProduct: vi.fn(),
     updateOrderStatus: vi.fn(),
     updateOrderPaymentStatus: vi.fn(),
+    updateOrderShipment: vi.fn(),
     getOrder: vi.fn(),
     listOrderItems: vi.fn(),
     getCustomer: vi.fn(),
@@ -102,7 +103,7 @@ describe("admin mutation actions", () => {
       { id: "item-1", orderId: "order-one", productName: "Kurti", quantity: 1, unitPrice: 890, totalPrice: 890 },
     ]);
     mocks.provider.getCustomer.mockResolvedValueOnce({ id: "customer-1", email: "buyer@example.com", phone: "9999999999" });
-    mocks.fulfillWithShiprocket.mockResolvedValueOnce(101);
+    mocks.fulfillWithShiprocket.mockResolvedValueOnce({ orderId: 101, shipmentId: 202 });
 
     const formData = new FormData();
     formData.set("id", "order-one");
@@ -121,7 +122,7 @@ describe("admin mutation actions", () => {
       id: "order-one", orderNumber: "KE-1", status: "confirmed",
       subtotal: 0, shipping: 0, discount: 0, total: 0, items: [],
     });
-    mocks.fulfillWithShiprocket.mockResolvedValueOnce(101);
+    mocks.fulfillWithShiprocket.mockResolvedValueOnce({ orderId: 101, shipmentId: 202 });
 
     const formData = new FormData();
     formData.set("id", "order-one");

@@ -23,11 +23,11 @@ export type CheckoutActionResult =
   | { ok: true; mode: "cod"; order: ReturnType<typeof publicOrder>; replayed: boolean }
   | { ok: true; mode: "cashfree"; order: ReturnType<typeof publicOrder>; replayed: boolean; paymentSessionId: string; environment: "sandbox" | "production" }
   | {
-      ok: false;
-      code: "VALIDATION" | "UNAUTHENTICATED" | "CART" | "PROVIDER";
-      message: string;
-      fieldErrors?: Record<string, string[]>;
-    };
+    ok: false;
+    code: "VALIDATION" | "UNAUTHENTICATED" | "CART" | "PROVIDER";
+    message: string;
+    fieldErrors?: Record<string, string[]>;
+  };
 
 export async function previewCouponAction(code: string, subtotal: number): Promise<CouponPreviewResult> {
   try {

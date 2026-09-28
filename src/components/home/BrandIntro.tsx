@@ -23,14 +23,14 @@ export function BrandIntro({
   const heroMobile = mobileImage || HERO_IMAGE_MOBILE;
   return (
     <section className="relative overflow-hidden bg-[#f6ede0] min-h-[540px] sm:min-h-[600px] lg:min-h-[90vh] flex items-center">
-      {/* Background photo — never cropped, separate crops for mobile vs laptop */}
-      <div className="absolute inset-x-0 top-[2px] bottom-[2px]">
+      {/* Background photo — covers section seamlessly without gaps */}
+      <div className="absolute inset-0">
         <Image
           src={heroMobile}
           alt="Banarasi handloom weaving craftsmanship"
           fill
           sizes="100vw"
-          className="object-contain object-center lg:hidden"
+          className="object-cover object-center lg:hidden"
           priority
         />
         <Image
@@ -38,7 +38,7 @@ export function BrandIntro({
           alt="Banarasi handloom weaving craftsmanship"
           fill
           sizes="100vw"
-          className="hidden object-contain object-[58%_45%] lg:block"
+          className="hidden object-cover object-right lg:block"
           priority
         />
         {/* Warm cream fade from the left so text stays readable */}

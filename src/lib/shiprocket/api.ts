@@ -5,7 +5,7 @@ import { z } from "zod";
 const schema = z.object({
   SHIPROCKET_EMAIL: z.string().trim().min(1),
   SHIPROCKET_PASSWORD: z.string().trim().min(1),
-  SHIPROCKET_PICKUP_LOCATION: z.string().trim().min(1).optional(),
+  SHIPROCKET_PICKUP_LOCATION: z.string().trim().optional(),
 });
 
 export type ShiprocketApiConfig = {
@@ -113,5 +113,81 @@ export async function createShiprocketOrder(
   return {
     orderId: Number(data.order_id ?? 0),
     shipmentId: Number(data.shipment_id ?? 0),
+  };
+}
+
+async function shiprocketRequest(path: string, env = process.env, retry = true): Promise<unknown> {
+  const authToken = await getToken(env);
+  const response = await fetch(`${BASE}${path}`, {
+    headers: { authorization: `Bearer ${authToken}` },
+  });
+  if (response.status === 401 && retry) {
+    await resetShiprocketToken();
+    return shiprocketRequest(path, env, false);
+  }
+  if (!response.ok) {
+    throw new Error(`Shiprocket request to ${path} failed with status ${response.status}.`);
+  }
+  return response.json();
+}
+
+export type ShiprocketScanEvent = {
+  date: string | null;
+  status: string | null;
+  activity: string | null;
+  location: string | null;
+};
+
+/** Live courier tracking (status + full scan history) for a shipment that already has an AWB. */
+export async function trackShiprocketShipmentByAwb(
+  awbCode: string,
+  env = process.env
+): Promise<{ currentStatus: string | null; courierName: string | null; currentLocation: string | null; scans: ShiprocketScanEvent[] }> {
+  const data = (await shiprocketRequest(`/courier/track/awb/${encodeURIComponent(awbCode)}`, env)) as {
+    tracking_data?: {
+      shipment_track?: Array<{ current_status?: string; courier_name?: string }>;
+      shipment_track_activities?: Array<{ date?: string; status?: string; activity?: string; location?: string }>;
+    };
+  };
+  const shipmentData = data?.tracking_data?.shipment_track?.[0];
+  const activities = data?.tracking_data?.shipment_track_activities ?? [];
+  const scans: ShiprocketScanEvent[] = activities.map((a) => ({
+    date: a?.date ? String(a.date) : null,
+    status: a?.status ? String(a.status) : null,
+    activity: a?.activity ? String(a.activity) : null,
+    location: a?.location ? String(a.location) : null,
+  }));
+  return {
+    currentStatus: shipmentData?.current_status ? String(shipmentData.current_status) : null,
+    courierName: shipmentData?.courier_name ? String(shipmentData.courier_name) : null,
+    currentLocation: scans[0]?.location || null,
+    scans,
+  };
+}
+
+/** Order-level status for a shipment that has no AWB yet — also surfaces the AWB if Shiprocket assigned one but our webhook never arrived. */
+export async function getShiprocketOrderShipment(
+  shiprocketOrderId: string,
+  env = process.env
+): Promise<{ currentStatus: string | null; awbCode: string | null; courierName: string | null }> {
+  const data = (await shiprocketRequest(`/orders/show/${encodeURIComponent(shiprocketOrderId)}`, env)) as {
+    data?: {
+      status?: string;
+      last_mile_awb?: string;
+      awb_code?: string;
+      awb?: string;
+      last_mile_courier_name?: string;
+      courier_name?: string;
+      shipments?: { awb?: string; awb_code?: string; courier?: string; courier_name?: string } | Array<{ awb?: string; awb_code?: string; courier?: string; courier_name?: string }>;
+    };
+  };
+  const order = data?.data;
+  const shipment = Array.isArray(order?.shipments) ? order.shipments[0] : order?.shipments;
+  const awbCode = shipment?.awb || shipment?.awb_code || order?.last_mile_awb || order?.awb_code || order?.awb || null;
+  const courierName = shipment?.courier || shipment?.courier_name || order?.last_mile_courier_name || order?.courier_name || null;
+  return {
+    currentStatus: order?.status ? String(order.status) : null,
+    awbCode: awbCode ? String(awbCode) : null,
+    courierName: courierName ? String(courierName) : null,
   };
 }

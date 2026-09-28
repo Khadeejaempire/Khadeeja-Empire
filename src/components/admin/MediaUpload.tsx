@@ -31,7 +31,7 @@ export function MediaUpload({
       
       {/* File Preview */}
       {value ? (
-        <div className={`relative ${aspectClassName} w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50`}>
+        <div className={`relative ${aspectClassName} w-full max-w-[220px] max-h-48 overflow-hidden rounded-xl border border-stone-200 bg-stone-50 shadow-2xs`}>
           {value.toLowerCase().match(/\.(mp4|webm|ogv|mov)$/) || value.includes("/video/upload/") ? (
             <video src={value} controls className={`h-full w-full object-${fit}`} />
           ) : (
@@ -41,6 +41,7 @@ export function MediaUpload({
           <button
             type="button"
             onClick={() => setValue("")}
+            title="Remove media"
             className="absolute right-2 top-2 rounded-full bg-stone-900/80 p-1 text-white hover:bg-red-600 transition"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>

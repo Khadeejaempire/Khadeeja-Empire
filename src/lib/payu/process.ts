@@ -2,8 +2,6 @@ import "server-only";
 
 import { getDataProvider } from "@/lib/data";
 import { isBrevoConfigured, orderConfirmationContent, sendBrevoEmail } from "@/lib/brevo/server";
-import { isShiprocketConfigured } from "@/lib/shiprocket/api";
-import { fulfillWithShiprocket } from "@/lib/shiprocket/fulfill";
 import { formatPayUAmount } from "./hash";
 import { getPayUConfig } from "./config";
 import { parseAndVerifyCallback, verifyPayment } from "./payment";
@@ -51,14 +49,8 @@ export async function processPayUResponse(fields: Record<string, string>) {
         console.error("PayU order confirmation email failed:", error);
       });
     }
-    if (isShiprocketConfigured()) {
-      // Fire-and-forget: a failed push can be retried from admin; never blocks payment.
-      // ponytail: no retry queue — re-pushed manually if a Shiprocket push is missed.
-      const fullOrder = order.items ? order : await provider.getOrder(order.id);
-      if (fullOrder?.items?.length) {
-        void fulfillWithShiprocket(fullOrder, { email: attempt.customerEmail, phone: attempt.customerPhone }).catch(() => {});
-      }
-    }
+    // Shiprocket shipment creation is admin-triggered only (order detail page
+    // "Ship via Shiprocket" button) — not pushed automatically on payment.
   } else if (verified.status === "failure") {
     await provider.applyVerifiedPaymentResult({
       transactionId: callback.txnid,

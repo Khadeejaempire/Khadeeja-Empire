@@ -2,8 +2,6 @@ import "server-only";
 
 import { getDataProvider } from "@/lib/data";
 import { isBrevoConfigured, orderConfirmationContent, sendBrevoEmail } from "@/lib/brevo/server";
-import { isShiprocketConfigured } from "@/lib/shiprocket/api";
-import { fulfillWithShiprocket } from "@/lib/shiprocket/fulfill";
 import { getCashfreeConfig } from "./config";
 import { verifyCashfreePayment } from "./payment";
 
@@ -29,10 +27,8 @@ export async function processCashfreeReturn(transactionId: string) {
         console.error("Cashfree order confirmation email failed:", error);
       });
     }
-    if (isShiprocketConfigured()) {
-      const fullOrder = order.items ? order : await provider.getOrder(order.id);
-      if (fullOrder?.items?.length) void fulfillWithShiprocket(fullOrder, { email: attempt.customerEmail, phone: attempt.customerPhone }).catch(() => {});
-    }
+    // Shiprocket shipment creation is admin-triggered only (order detail page
+    // "Ship via Shiprocket" button) — not pushed automatically on payment.
   } else if (verified.status === "failure") {
     await provider.applyVerifiedPaymentResult({ transactionId, status: "failed", providerPaymentId: verified.providerPaymentId ?? null, failureMessage: "Payment was not completed." });
   }

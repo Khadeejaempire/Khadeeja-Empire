@@ -164,6 +164,13 @@ create table if not exists orders (
   shipping_address jsonb,
   billing_address jsonb,
   notes text,
+  shiprocket_order_id text,
+  shiprocket_shipment_id text,
+  awb_code text,
+  courier_name text,
+  shiprocket_status text,
+  shipped_at timestamptz,
+  delivered_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );

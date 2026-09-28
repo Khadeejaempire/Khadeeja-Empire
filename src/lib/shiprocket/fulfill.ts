@@ -1,8 +1,14 @@
 import "server-only";
 
-import type { OrderRecord } from "@/lib/admin/types";
-import type { ShiprocketOrderPayload } from "./api";
-import { createShiprocketOrder, getShiprocketApiConfig, isShiprocketConfigured } from "./api";
+import type { OrderRecord, OrderStatus } from "@/lib/admin/types";
+import type { ShiprocketOrderPayload, ShiprocketScanEvent } from "./api";
+import {
+  createShiprocketOrder,
+  getShiprocketApiConfig,
+  getShiprocketOrderShipment,
+  isShiprocketConfigured,
+  trackShiprocketShipmentByAwb,
+} from "./api";
 
 export type ShiprocketContact = {
   email?: string | null;
@@ -80,7 +86,7 @@ export async function fulfillWithShiprocket(
   order: OrderRecord,
   contact: ShiprocketContact = {},
   dimensions: ShiprocketDimensions = {}
-): Promise<number> {
+): Promise<{ orderId: number; shipmentId: number }> {
   if (!isShiprocketConfigured()) {
     throw new Error("Shiprocket is not configured: set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.");
   }
@@ -92,6 +98,67 @@ export async function fulfillWithShiprocket(
   const pickupLocation = getShiprocketApiConfig().pickupLocation;
   if (pickupLocation) payload.pickup_location = pickupLocation;
   else delete payload.pickup_location; // Shiprocket falls back to your default pickup address
-  const result = await createShiprocketOrder(payload);
-  return result.orderId;
+  return createShiprocketOrder(payload);
+}
+
+/** Delivered/cancelled are terminal; never let a stale or racing tracking update move an order backwards out of them. */
+export function shouldApplyMappedStatus(current: OrderStatus, mapped: "shipped" | "delivered" | "cancelled"): boolean {
+  if (current === "delivered") return mapped === "delivered";
+  if (current === "cancelled") return mapped === "delivered";
+  return true;
+}
+
+export type ShiprocketTrackingResult = {
+  shiprocketStatus: string | null;
+  awbCode: string | null;
+  courierName: string | null;
+  mappedStatus: "shipped" | "delivered" | "cancelled" | null;
+  currentLocation: string | null;
+  scans: ShiprocketScanEvent[];
+};
+
+/**
+ * Pull-based live tracking sync — used on the customer order-detail page (and
+ * available for an admin "sync" action) to catch up an order whose webhook
+ * update never arrived. Discovers the AWB from the order-level lookup if we
+ * don't have one yet, the same way the webhook can't: Shiprocket's tracking
+ * API only accepts an AWB, not their internal order id.
+ */
+export async function syncShiprocketTracking(
+  order: Pick<OrderRecord, "shiprocketOrderId" | "awbCode">
+): Promise<ShiprocketTrackingResult> {
+  let currentStatus: string | null = null;
+  let awbCode = order.awbCode || null;
+  let courierName: string | null = null;
+  let currentLocation: string | null = null;
+  let scans: ShiprocketScanEvent[] = [];
+
+  if (awbCode) {
+    const tracked = await trackShiprocketShipmentByAwb(awbCode);
+    currentStatus = tracked.currentStatus;
+    courierName = tracked.courierName;
+    currentLocation = tracked.currentLocation;
+    scans = tracked.scans;
+  } else if (order.shiprocketOrderId) {
+    const shipment = await getShiprocketOrderShipment(order.shiprocketOrderId);
+    currentStatus = shipment.currentStatus;
+    if (shipment.awbCode) {
+      awbCode = shipment.awbCode;
+      courierName = shipment.courierName;
+      const tracked = await trackShiprocketShipmentByAwb(awbCode);
+      if (tracked.currentStatus) currentStatus = tracked.currentStatus;
+      if (tracked.courierName) courierName = tracked.courierName;
+      currentLocation = tracked.currentLocation;
+      scans = tracked.scans;
+    }
+  }
+
+  return {
+    shiprocketStatus: currentStatus,
+    awbCode,
+    courierName,
+    mappedStatus: mapShiprocketStatus(currentStatus ?? undefined, ""),
+    currentLocation,
+    scans,
+  };
 }

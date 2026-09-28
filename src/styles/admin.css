@@ -25,6 +25,21 @@
   outline-offset: 2px;
 }
 
+/* Ensure all admin typography uses clean sans-serif and lining numbers (no oldstyle serif figures) */
+.admin-scope :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-body, "DM Sans", system-ui, -apple-system, sans-serif) !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+
+.admin-scope :is(code, pre, .font-mono) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+
+.admin-scope * {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
 .admin-shell {
   display: flex;
   width: 100%;

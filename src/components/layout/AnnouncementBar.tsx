@@ -23,7 +23,7 @@ export function AnnouncementBar({ messages }: { messages: string[] }) {
 
   return (
     <div
-      className="relative z-[var(--z-announcement)] h-[38px] overflow-hidden bg-maroon"
+      className="print:hidden relative z-[var(--z-announcement)] h-[38px] overflow-hidden bg-maroon"
       role="region"
       aria-label="Store announcements"
     >

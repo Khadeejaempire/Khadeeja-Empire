@@ -27,13 +27,15 @@ export function StoreShell({ children, announcements, products, categories, disc
           <AnnouncementBar messages={announcements} />
           <Header discoveryLinks={discoveryLinks} categories={categories} customer={customer} />
           <main id="main-content">{children}</main>
-          <Footer categories={categories} />
-          <SearchDrawer products={products} />
-          <CartDrawer />
-          <MobileNav categories={categories} />
-          <MobileBottomNav customer={customer} />
-          <FloatingContact />
-          <ToastContainer />
+          <div className="print:hidden">
+            <Footer categories={categories} />
+            <SearchDrawer products={products} />
+            <CartDrawer />
+            <MobileNav categories={categories} />
+            <MobileBottomNav customer={customer} />
+            <FloatingContact />
+            <ToastContainer />
+          </div>
         </UIProvider>
       </CartProvider>
     </WishlistProvider>

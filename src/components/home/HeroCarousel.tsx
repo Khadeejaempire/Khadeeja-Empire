@@ -50,7 +50,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slideCount}: ${s.title}`}
             >
-              <div className="relative w-full md:flex md:flex-initial md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[46%] md:self-stretch md:items-end md:justify-center">
+              <div className="relative w-full md:flex md:flex-initial md:h-auto md:min-h-[calc(100dvh-99px)] md:w-[44%] md:self-stretch md:items-end md:justify-center">
                 {/* Mobile: fixed square box, always full width — zero gap. Upload a 1:1 image so nothing gets cropped; a slightly off-ratio image is cropped minimally rather than leaving a gap. */}
                 <div className="relative w-full aspect-square md:hidden">
                   <Image
@@ -62,14 +62,14 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                     priority={i === 0}
                   />
                 </div>
-                {/* Desktop: fills the fixed-height side panel, never cropped */}
-                <div className="hidden md:block md:h-full md:w-full">
+                {/* Desktop: fills the fixed-height side panel with subtle padding for a slightly smaller, refined fit */}
+                <div className="hidden md:block md:h-full md:w-full md:py-5 md:px-3 lg:py-6 lg:px-4">
                   <div className="relative h-full w-full">
                     <Image
                       src={s.image}
                       alt={s.imageAlt}
                       fill
-                      sizes="(max-width: 768px) 100vw, 46vw"
+                      sizes="(max-width: 768px) 100vw, 44vw"
                       className="object-contain object-center"
                       priority={i === 0}
                     />

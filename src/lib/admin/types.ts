@@ -279,9 +279,29 @@ export interface OrderRecord {
   billingAddress?: AddressRecord | null;
   notes?: string | null;
   items?: OrderItemRecord[] | null;
+  shiprocketOrderId?: string | null;
+  shiprocketShipmentId?: string | null;
+  awbCode?: string | null;
+  courierName?: string | null;
+  shiprocketStatus?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
+
+export type OrderShipmentPatch = Partial<
+  Pick<
+    OrderRecord,
+    | "shiprocketOrderId"
+    | "shiprocketShipmentId"
+    | "awbCode"
+    | "courierName"
+    | "shiprocketStatus"
+    | "shippedAt"
+    | "deliveredAt"
+  >
+>;
 
 export interface ReviewRecord {
   id: ProviderId;
