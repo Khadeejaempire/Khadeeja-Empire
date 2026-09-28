@@ -437,11 +437,11 @@ export function AdminDashboard({
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700 text-[10px]">
-                            {getInitials(customer?.name || order.shippingAddress?.name)}
+                            {getInitials(customer?.name || order.shippingAddress?.fullName)}
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-stone-900 truncate max-w-[150px]">
-                              {customer?.name || order.shippingAddress?.name || "Guest Customer"}
+                              {customer?.name || order.shippingAddress?.fullName || "Guest Customer"}
                             </p>
                             <p className="text-[11px] text-stone-400 truncate max-w-[150px]">
                               {customer?.email || order.shippingAddress?.phone || "No contact"}

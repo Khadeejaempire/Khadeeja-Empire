@@ -289,7 +289,7 @@ export function ProductOptionsEditor({
                           <span>
                             Stock:{" "}
                             <strong
-                              className={variant.stock > 0 ? "text-emerald-700" : "text-red-600"}
+                              className={(variant.stock ?? 0) > 0 ? "text-emerald-700" : "text-red-600"}
                             >
                               {variant.stock}
                             </strong>

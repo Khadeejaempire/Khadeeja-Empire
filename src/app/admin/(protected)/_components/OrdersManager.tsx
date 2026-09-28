@@ -697,11 +697,11 @@ export function OrdersManager({
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2.5">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-100 to-stone-200 font-bold text-stone-700 text-[11px] shadow-2xs">
-                              {getInitials(customer?.name || order.shippingAddress?.name)}
+                              {getInitials(customer?.name || order.shippingAddress?.fullName)}
                             </div>
                             <div className="min-w-0">
                               <p className="font-semibold text-stone-900 truncate max-w-[160px]">
-                                {customer?.name || order.shippingAddress?.name || "Guest Customer"}
+                                {customer?.name || order.shippingAddress?.fullName || "Guest Customer"}
                               </p>
                               <p className="text-[11px] text-stone-400 truncate max-w-[160px]">
                                 {customer?.email || order.shippingAddress?.phone || "No contact"}
@@ -879,11 +879,11 @@ export function OrdersManager({
                   {/* Customer Info */}
                   <div className="pt-3 flex items-center gap-2.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-100 to-stone-200 font-bold text-stone-700 text-xs shadow-2xs">
-                      {getInitials(customer?.name || order.shippingAddress?.name)}
+                      {getInitials(customer?.name || order.shippingAddress?.fullName)}
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-xs text-stone-900 truncate">
-                        {customer?.name || order.shippingAddress?.name || "Guest Customer"}
+                        {customer?.name || order.shippingAddress?.fullName || "Guest Customer"}
                       </p>
                       <p className="text-[11px] text-stone-400 truncate">
                         {customer?.email || order.shippingAddress?.phone || "No contact"}
@@ -1085,7 +1085,7 @@ export function OrdersManager({
                       <div className="flex items-center justify-between">
                         <span className="text-stone-500">Name</span>
                         <span className="font-semibold text-stone-900">
-                          {cust?.name || addr?.name || "Guest Customer"}
+                          {cust?.name || addr?.fullName || "Guest Customer"}
                         </span>
                       </div>
                       {(cust?.email || addr?.phone) && (
@@ -1101,8 +1101,8 @@ export function OrdersManager({
                           <span className="text-[11px] text-stone-400 block mb-1">Shipping Address:</span>
                           <p className="text-stone-700 leading-relaxed font-medium">
                             {[
-                              addr.addressLine1,
-                              addr.addressLine2,
+                              addr.line1,
+                              addr.line2,
                               addr.city,
                               addr.state,
                               addr.postalCode,

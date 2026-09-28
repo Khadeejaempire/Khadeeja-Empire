@@ -16,7 +16,7 @@ export function MediaUpload({
   name: string;
   label: string;
   defaultValue?: string;
-  folder?: "khadeeja/products" | "khadeeja/hero" | "khadeeja/content" | "khadeeja/instagram";
+  folder?: "khadeeja/products" | "khadeeja/hero" | "khadeeja/content" | "khadeeja/instagram" | "khadeeja/categories";
   aspectClassName?: string;
   fit?: "cover" | "contain";
 }) {

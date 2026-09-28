@@ -13,6 +13,7 @@ const CLOUDINARY_FOLDERS = [
   "khadeeja/hero",
   "khadeeja/content",
   "khadeeja/instagram",
+  "khadeeja/categories",
 ] as const;
 
 export const CLOUDINARY_ALLOWED_FORMATS = [

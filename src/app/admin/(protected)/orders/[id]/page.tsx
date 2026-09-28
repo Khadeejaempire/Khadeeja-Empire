@@ -184,9 +184,9 @@ export default async function OrderDetailPage({
     border: "border-stone-200",
   };
 
-  const recipientName = address?.fullName || address?.name || customer?.name || "Customer";
-  const street1 = address?.line1 || address?.addressLine1 || "";
-  const street2 = address?.line2 || address?.addressLine2 || "";
+  const recipientName = address?.fullName || customer?.name || "Customer";
+  const street1 = address?.line1 || "";
+  const street2 = address?.line2 || "";
   const fullAddressString = [
     recipientName,
     street1,
