@@ -51,7 +51,7 @@ export function toStorefrontProduct(record: ProductRecord): Product {
     price: record.price ?? 0,
     oldPrice: record.oldPrice ?? undefined,
     currency: record.currency ?? "INR",
-    priceStatus: record.priceStatus ?? "demo",
+    priceStatus: record.priceStatus ?? "confirmed",
     sizes: record.sizes ?? [],
     tags: (record.tags ?? []) as ProductTag[],
     availability: record.availability ?? "out-of-stock",

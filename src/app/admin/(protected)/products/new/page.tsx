@@ -4,6 +4,8 @@ import { getDataProvider } from "@/lib/data";
 import { AdminCard } from "../../_components/AdminPage";
 import { ProductForm } from "../../_components/ProductForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewProductPage() {
   const categories = await getDataProvider().listCategories();
 

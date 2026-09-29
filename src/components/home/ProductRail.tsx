@@ -199,9 +199,6 @@ export function ProductRail({ products }: { products: Product[] }) {
                         <span className="font-bold text-[16px] sm:text-[18px] md:text-xl text-ink">
                           {formatPrice(product.price, product.currency)}
                         </span>
-                        {product.priceStatus === "demo" && (
-                          <span className="text-[9px] sm:text-[10px] text-muted">(Demo)</span>
-                        )}
                       </div>
 
                       <Link

@@ -133,11 +133,6 @@ export default async function ProductPage({ params }: PageProps) {
                     {discount}% OFF
                   </span>
                 ) : null}
-                {product.priceStatus === "demo" ? (
-                  <span className="text-xs text-muted">
-                    (Demo price &ndash; subject to change)
-                  </span>
-                ) : null}
               </div>
             </div>
 

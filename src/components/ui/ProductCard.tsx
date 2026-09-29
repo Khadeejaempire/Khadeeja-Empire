@@ -218,9 +218,6 @@ export function ProductCard({
                   {formatPrice(product.price, product.currency)}
                 </span>
               </span>
-              {product.priceStatus === "demo" && (
-                <span className="text-xs text-muted font-normal">(Demo price)</span>
-              )}
             </div>
 
             <button

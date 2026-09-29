@@ -24,14 +24,14 @@ export default function AboutPage() {
         />
         {/* Dark Gradient Overlay for text readability on left side */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-        
+
         <Container className="relative h-full flex flex-col justify-center">
           <div className="max-w-2xl text-white">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-[2px] bg-[#d8b88d]" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d8b88d]">OUR STORY</span>
             </div>
-            
+
             <h1 className="text-[40px] sm:text-5xl md:text-6xl lg:text-7xl font-display font-medium leading-[1.1] mb-6">
               Woven in Banaras.<br />
               Draped with <span className="text-[#d8b88d] italic font-serif">Pride.</span>
@@ -54,13 +54,13 @@ export default function AboutPage() {
       <section className="pt-12 md:pt-20 relative z-10">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-7xl mx-auto">
-            
+
             {/* Left Content */}
             <div className="flex flex-col max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-[#d8b88d] mb-4">
                 KHADEEJA EMPIRE
               </span>
-              
+
               <h2 className="text-3xl sm:text-4xl md:text-[44px] leading-[1.2] md:leading-[1.15] font-display font-bold text-ink mb-6">
                 Rooted in the handlooms<br className="hidden sm:block" />
                 of Banaras. Woven for<br className="hidden sm:block" />
@@ -109,7 +109,7 @@ export default function AboutPage() {
               <div className="absolute top-1/4 -right-4 sm:-right-10 w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#fdfaf5] border border-[#d8b88d]/30 shadow-xl flex flex-col items-center justify-center p-4 text-center z-10 hidden sm:flex">
                 <Flower2 className="w-6 h-6 text-[#d8b88d] mb-2 md:mb-3" strokeWidth={1.5} />
                 <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-[0.2em] text-ink leading-loose">
-                  HANDLOOM<br/>WOVEN<br/><br/>BANARASI<br/>HERITAGE
+                  HANDLOOM<br />WOVEN<br /><br />BANARASI<br />HERITAGE
                 </span>
               </div>
             </div>
@@ -119,11 +119,11 @@ export default function AboutPage() {
           {/* Features Box Below */}
           <div className="mt-12 md:mt-16 bg-white rounded-xl md:rounded-2xl shadow-sm py-5 px-4 md:py-6 md:px-8 w-full max-w-7xl xl:max-w-[1360px] mx-auto">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 md:gap-8 divide-y sm:divide-y-0 sm:divide-x divide-[#d8b88d]/20 py-6">
-              
+
               {/* Feature 1 */}
               <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-4 sm:pt-0 sm:px-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4l-2 5l1.5 1.5L6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2l-.5-8.5L19 9l-2-5H7z"/><path d="M9 11h6"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4l-2 5l1.5 1.5L6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2l-.5-8.5L19 9l-2-5H7z" /><path d="M9 11h6" /></svg>
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">01</span>
@@ -135,7 +135,7 @@ export default function AboutPage() {
               {/* Feature 2 */}
               <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-10 sm:pt-0 sm:px-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 9.5L9.5 14.5"/><path d="M12 2l4 4l-9 9l-4-4l9-9z"/><circle cx="16" cy="18" r="3"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 9.5L9.5 14.5" /><path d="M12 2l4 4l-9 9l-4-4l9-9z" /><circle cx="16" cy="18" r="3" /></svg>
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">02</span>
@@ -147,7 +147,7 @@ export default function AboutPage() {
               {/* Feature 3 */}
               <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-10 sm:pt-0 sm:px-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v-3a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2c0 .8.5 1.5 1.2 1.8"/><path d="M12 10l-9 6.5A1 1 0 0 0 3.5 18h17a1 1 0 0 0 .5-1.5L12 10z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v-3a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2c0 .8.5 1.5 1.2 1.8" /><path d="M12 10l-9 6.5A1 1 0 0 0 3.5 18h17a1 1 0 0 0 .5-1.5L12 10z" /></svg>
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">03</span>

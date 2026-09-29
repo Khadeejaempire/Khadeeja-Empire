@@ -43,9 +43,17 @@ const COMMON_TAGS = [
   "Casual",
 ];
 
-function imageUrls(product?: ProductRecord) {
+function imageUrls(product?: ProductRecord): string {
   return (product?.images || [])
-    .map((image) => (typeof image === "string" ? image : image.url))
+    .map((image) => {
+      if (!image) return "";
+      if (typeof image === "string") return image.trim();
+      if (typeof image === "object" && "url" in image && typeof image.url === "string") {
+        return image.url.trim();
+      }
+      return "";
+    })
+    .filter(Boolean)
     .join("\n");
 }
 
@@ -81,8 +89,20 @@ export function ProductForm({
   const [active, setActive] = useState(product?.active !== false);
   const [featured, setFeatured] = useState(product?.featured === true);
   const [badge, setBadge] = useState<string>(product?.badge || "");
-  const [sizes, setSizes] = useState<string>((product?.sizes || []).join(", "));
-  const [tags, setTags] = useState<string>((product?.tags || []).join(", "));
+  const [sizes, setSizes] = useState<string>(
+    Array.isArray(product?.sizes)
+      ? product.sizes.join(", ")
+      : typeof product?.sizes === "string"
+      ? product.sizes
+      : ""
+  );
+  const [tags, setTags] = useState<string>(
+    Array.isArray(product?.tags)
+      ? product.tags.join(", ")
+      : typeof product?.tags === "string"
+      ? product.tags
+      : ""
+  );
 
   // Live discount calculation
   const numericPrice = Number(price) || 0;
@@ -539,7 +559,13 @@ export function ProductForm({
                   </label>
                   <input
                     name="seoKeywords"
-                    defaultValue={(product?.seo?.keywords || []).join(", ")}
+                    defaultValue={
+                      Array.isArray(product?.seo?.keywords)
+                        ? product.seo.keywords.join(", ")
+                        : typeof product?.seo?.keywords === "string"
+                        ? product.seo.keywords
+                        : ""
+                    }
                     placeholder="Banarasi saree, Dupion silk, zari, ethnic..."
                     className={inputClass}
                   />

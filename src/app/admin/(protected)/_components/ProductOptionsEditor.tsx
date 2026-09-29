@@ -30,13 +30,15 @@ const PRESET_COLORS = [
 
 export function ProductOptionsEditor({
   productId,
-  colors,
-  variants,
+  colors: rawColors = [],
+  variants: rawVariants = [],
 }: {
   productId: string;
-  colors: ProductColorRecord[];
-  variants: ProductVariantRecord[];
+  colors?: ProductColorRecord[];
+  variants?: ProductVariantRecord[];
 }) {
+  const colors = Array.isArray(rawColors) ? rawColors : [];
+  const variants = Array.isArray(rawVariants) ? rawVariants : [];
   const [selectedHex, setSelectedHex] = useState("#8f4338");
   const [colorName, setColorName] = useState("");
   const colorInputRef = useRef<HTMLInputElement>(null);

@@ -7,17 +7,24 @@ import { ProductForm } from "../../../_components/ProductForm";
 import { ProductOptionsEditor } from "../../../_components/ProductOptionsEditor";
 import { ProductInformationEditor } from "../../../_components/ProductInformationEditor";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function EditProductPage({ params }: PageProps) {
   const { id } = await params;
+  const decodedId = decodeURIComponent(id || "");
   const provider = getDataProvider();
-  const [product, categories] = await Promise.all([
-    provider.getProduct(id),
-    provider.listCategories(),
-  ]);
+  
+  // Try fetching by decoded id/slug, fallback to raw id
+  let product = await provider.getProduct(decodedId);
+  if (!product && decodedId !== id) {
+    product = await provider.getProduct(id);
+  }
+
+  const categories = await provider.listCategories();
 
   if (!product) notFound();
 
