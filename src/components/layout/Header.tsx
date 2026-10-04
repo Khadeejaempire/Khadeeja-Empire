@@ -121,7 +121,7 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
             className="flex items-center shrink-0 transition-transform duration-300 hover:scale-105"
             aria-label={`${siteConfig.name} home`}
           >
-            <BrandLogo variant="navbar" className="w-[50px] h-[50px] lg:w-[60px] lg:h-[60px]" />
+            <BrandLogo variant="navbar" className="w-[56px] h-[56px] sm:w-[68px] sm:h-[68px] lg:w-[80px] lg:h-[80px]" />
           </Link>
 
           {/* Center Search Bar (Desktop - Prominent Handlooms style) */}
@@ -485,7 +485,7 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
                 type="button"
                 className={cn(
                   "inline-flex items-center gap-1 text-[13px] xl:text-[14px] font-normal transition-colors py-1 whitespace-nowrap cursor-pointer",
-                  pathname.startsWith("/track-order") || pathname.startsWith("/shipping-returns")
+                  pathname.startsWith("/shipping-returns")
                     ? "text-primary font-semibold"
                     : "text-ink/80 hover:text-primary"
                 )}
@@ -506,16 +506,6 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
                       Customer Care
                     </div>
                     <ul className="flex flex-col pt-1.5">
-                      <li>
-                        <Link
-                          href="/track-order"
-                          onClick={() => setOpenMenu(null)}
-                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-ink hover:text-primary hover:bg-primary/5 transition-colors"
-                        >
-                          <span>Track Your Order</span>
-                          <span className="text-[11px] text-muted">→</span>
-                        </Link>
-                      </li>
                       <li>
                         <Link
                           href="/contact"

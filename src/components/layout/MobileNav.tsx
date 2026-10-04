@@ -131,13 +131,6 @@ export function MobileNav({ categories }: { categories: Category[] }) {
             </summary>
             <div className="flex flex-col pb-3 pl-3 space-y-1">
               <Link
-                href="/track-order"
-                onClick={closeDrawer}
-                className="py-2 px-3 text-[14px] sm:text-[15px] text-ink/80 hover:text-primary hover:bg-black/5 rounded-lg transition-colors"
-              >
-                Track Order
-              </Link>
-              <Link
                 href="/contact"
                 onClick={closeDrawer}
                 className="py-2 px-3 text-[14px] sm:text-[15px] text-ink/80 hover:text-primary hover:bg-black/5 rounded-lg transition-colors"

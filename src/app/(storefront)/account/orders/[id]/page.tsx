@@ -171,9 +171,10 @@ export default async function AccountOrderDetailPage({ params }: { params: Promi
             href={`https://wa.me/${siteConfig.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, I need assistance with my Order #${order.orderNumber}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-10 px-5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold uppercase tracking-wide transition-colors"
+            className="inline-flex items-center gap-2 h-10 px-5 bg-green-600 hover:bg-green-700 !text-white text-xs font-semibold uppercase tracking-wide transition-colors"
+            style={{ color: "#ffffff" }}
           >
-            <Phone size={14} />
+            <Phone size={14} className="text-white" />
             WhatsApp Support
           </a>
         </div>
