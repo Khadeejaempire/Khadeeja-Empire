@@ -71,6 +71,7 @@ export interface CategoryRecord {
   image?: string | null;
   parentId?: ProviderId | null;
   active?: boolean | null;
+  isFeatured?: boolean | null;
   sortOrder?: number | null;
   productCount?: number | null;
 }
@@ -314,6 +315,8 @@ export interface ReviewRecord {
   body: string;
   status?: "pending" | "approved" | "rejected" | null;
   isHomeFeatured?: boolean | null;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -374,6 +377,8 @@ export interface TestimonialRecord {
   quote: string;
   role?: string | null;
   rating?: number | null;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
   active?: boolean | null;
   sortOrder?: number | null;
 }
@@ -507,6 +512,7 @@ export interface CategoryMutationInput {
   image?: string | null;
   parentId?: string | null;
   active?: boolean | null;
+  isFeatured?: boolean | null;
   sortOrder?: number | null;
 }
 
@@ -613,6 +619,8 @@ export interface TestimonialMutationInput {
   quote: string;
   role?: string | null;
   rating?: number | null;
+  photoUrl?: string | null;
+  videoUrl?: string | null;
   active?: boolean | null;
   sortOrder?: number | null;
 }

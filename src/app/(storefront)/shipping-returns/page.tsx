@@ -163,7 +163,7 @@ export default async function ShippingReturnsPage() {
                           <p>
                             For detailed measurements and personalized fit
                             guidance, please refer to the size chart on each
-                            product page or contact us directly. We're happy to
+                            product page or contact us directly. We&apos;re happy to
                             help you find your perfect fit.
                           </p>
                         </div>

@@ -29,7 +29,7 @@ export function StoreShell({ children, announcements, products, categories, disc
           <main id="main-content">{children}</main>
           <div className="print:hidden">
             <Footer categories={categories} />
-            <SearchDrawer products={products} />
+            <SearchDrawer products={products} categories={categories} />
             <CartDrawer />
             <MobileNav categories={categories} />
             <MobileBottomNav customer={customer} />

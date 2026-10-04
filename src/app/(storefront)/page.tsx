@@ -69,6 +69,8 @@ export default async function HomePage() {
       quote: item.quote,
       role: item.role,
       rating: item.rating ?? 5,
+      photoUrl: item.photoUrl,
+      videoUrl: item.videoUrl,
     })),
     ...reviews
       .filter((item) => item.status === "approved" && item.isHomeFeatured)

@@ -319,7 +319,12 @@ export class LocalDataProvider implements DataProvider {
   async createCategory(input: CategoryMutationInput): Promise<CategoryRecord> {
     const state = await this.update((current) => {
       ensureUnique(current.categories, (category) => category.slug === input.slug, "A category with this slug already exists.");
-      current.categories.push({ ...input, id: id("category"), active: input.active ?? true });
+      current.categories.push({
+        ...input,
+        id: id("category"),
+        active: input.active ?? true,
+        isFeatured: input.isFeatured ?? false,
+      });
       return current;
     });
     return state.categories[state.categories.length - 1];

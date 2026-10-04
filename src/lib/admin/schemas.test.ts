@@ -116,11 +116,15 @@ describe("admin mutation schemas", () => {
       postalCode: "221001",
     }).city).toBe("Varanasi");
     expect(productInformationMutationSchema.parse({ fabric: "Cotton" }).fabric).toBe("Cotton");
-    expect(reviewMutationSchema.parse({
-      authorName: "Customer",
-      rating: 5,
-      body: "Beautiful.",
-    }).rating).toBe(5);
+    expect(
+      reviewMutationSchema.parse({
+        authorName: "Customer",
+        rating: 5,
+        body: "Beautiful.",
+        photoUrl: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+        videoUrl: "https://res.cloudinary.com/demo/video/upload/sample.mp4",
+      }).photoUrl
+    ).toBe("https://res.cloudinary.com/demo/image/upload/sample.jpg");
     expect(inquiryMutationSchema.parse({
       name: "Customer",
       email: "customer@example.com",

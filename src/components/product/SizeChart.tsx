@@ -43,9 +43,9 @@ function convertedValue(value: string | null | undefined, fromUnit: Unit, toUnit
 }
 
 export function SizeChart({ measurements, modalOnly }: SizeChartProps) {
-  const activeMeasurements = measurements ?? DEFAULT_SIZE_CHART_MEASUREMENTS;
-  const sourceUnit: Unit = activeMeasurements.unit === "inches" ? "inches" : "cm";
-  const sizes = useMemo(() => activeMeasurements.sizes ?? [], [activeMeasurements.sizes]);
+  const activeMeasurements = measurements;
+  const sourceUnit: Unit = activeMeasurements?.unit === "inches" ? "inches" : "cm";
+  const sizes = useMemo(() => activeMeasurements?.sizes ?? [], [activeMeasurements?.sizes]);
   const initialSize = STANDARD_SIZES.find((size) => sizes.some((entry) => entry.size.toUpperCase() === size)) ?? sizes[0]?.size ?? "XXS";
   const [unit, setUnit] = useState<Unit>(sourceUnit);
   const [selectedSize, setSelectedSize] = useState(initialSize.toUpperCase());
@@ -81,7 +81,7 @@ export function SizeChart({ measurements, modalOnly }: SizeChartProps) {
     return () => window.removeEventListener("open-size-guide", handleOpen);
   }, []);
 
-  if (!activeMeasurements.enabled || sizes.length === 0) return null;
+  if (!activeMeasurements?.enabled || sizes.length === 0) return null;
 
   if (modalOnly) {
     return (

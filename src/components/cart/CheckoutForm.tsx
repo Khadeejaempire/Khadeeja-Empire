@@ -397,7 +397,7 @@ export function CheckoutForm({ lockedEmail = null }: { lockedEmail?: string | nu
                 </p>
               ) : (
                 <p className="text-[12px] text-ink font-medium leading-snug">
-                  Congratulations! You've unlocked <span className="font-bold text-[#a27b53]">FREE Shipping!</span>
+                  Congratulations! You&apos;ve unlocked <span className="font-bold text-[#a27b53]">FREE Shipping!</span>
                 </p>
               )}
             </div>

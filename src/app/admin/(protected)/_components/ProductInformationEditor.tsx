@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { 
   Sparkles, 
   Maximize2, 
@@ -9,6 +11,7 @@ import {
   FileText, 
   Ruler, 
   Save, 
+  Loader2,
   Info 
 } from "lucide-react";
 import { MeasurementsEditor } from "./MeasurementsEditor";
@@ -27,20 +30,35 @@ export function ProductInformationEditor({
   info,
   productId,
 }: ProductInformationEditorProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [measurements, setMeasurements] = useState<SizeChartMeasurements | null | undefined>(
     info?.measurements
   );
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    setMeasurements(info?.measurements);
+  }, [info?.measurements]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    formData.set("productId", productId);
     if (measurements) {
-      const form = e.currentTarget;
-      const measurementsInput = form.querySelector(
-        'input[name="measurements"]'
-      ) as HTMLInputElement;
-      if (measurementsInput) {
-        measurementsInput.value = JSON.stringify(measurements);
-      }
+      formData.set("measurements", JSON.stringify(measurements));
+    } else {
+      formData.set("measurements", "");
     }
+
+    startTransition(async () => {
+      try {
+        await saveProductInformationAction(formData);
+        toast.success("Specifications & sizing saved successfully");
+        router.refresh();
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to save specifications");
+      }
+    });
   };
 
   const specCards = [
@@ -76,8 +94,7 @@ export function ProductInformationEditor({
 
   return (
     <form
-      action={saveProductInformationAction}
-      onSubmit={handleFormSubmit}
+      onSubmit={handleSubmit}
       className="space-y-6"
     >
       <input type="hidden" name="productId" value={productId} />
@@ -163,10 +180,20 @@ export function ProductInformationEditor({
       <div className="flex items-center justify-end pt-3">
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9c5247] to-[#7f4037] px-6 py-2.5 text-xs font-semibold text-white shadow-md shadow-[#9c5247]/20 transition-all hover:brightness-105 active:scale-95"
+          disabled={isPending}
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9c5247] to-[#7f4037] px-6 py-2.5 text-xs font-semibold text-white shadow-md shadow-[#9c5247]/20 transition-all hover:brightness-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Save className="h-4 w-4" />
-          Save Specifications & Sizing
+          {isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Save Specifications & Sizing
+            </>
+          )}
         </button>
       </div>
     </form>

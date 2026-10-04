@@ -11,6 +11,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  SlidersHorizontal,
   Star,
   Tag,
   Truck,
@@ -57,6 +58,7 @@ export const adminNavSections: AdminNavSection[] = [
   {
     label: "Settings",
     items: [
+      { label: "Shop Filters", href: "/admin/settings/filters", icon: SlidersHorizontal },
       { label: "Global FAQs", href: "/admin/settings/faqs", icon: Settings },
       { label: "Shipping Settings", href: "/admin/settings/shipping", icon: Truck },
       { label: "Manage Coupons", href: "/admin/settings/coupons", icon: Tag },

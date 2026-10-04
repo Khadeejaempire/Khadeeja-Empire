@@ -74,7 +74,7 @@ export default function WishlistClient() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display font-medium text-ink mb-5 text-center">Your wishlist is empty</h2>
           <p className="text-muted text-sm md:text-base text-center max-w-sm mb-4">
-            You haven't saved any items yet. Start exploring our collections to find your new favorites.
+            You haven&apos;t saved any items yet. Start exploring our collections to find your new favorites.
           </p>
           <div className="mt-4 md:mt-6">
             <Link

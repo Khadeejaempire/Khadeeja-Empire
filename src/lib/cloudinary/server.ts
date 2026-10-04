@@ -40,7 +40,7 @@ export async function resolveExistingLocalAssetUrl(
   try {
     const [assetsRoot, filePath] = await Promise.all([
       realpath(PUBLIC_ASSETS_DIRECTORY),
-      realpath(candidate.path),
+      realpath(/*turbopackIgnore: true*/ candidate.path),
     ]);
     const relativePath = relative(assetsRoot, filePath);
     if (!relativePath || relativePath.startsWith("..") || isAbsolute(relativePath)) return null;

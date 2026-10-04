@@ -33,11 +33,8 @@ describe("SizeChart", () => {
     expect(queryByRole("dialog")).toBeNull();
   });
 
-  it("renders the standard guide when a product has no saved measurements", () => {
-    const { getByText, getByRole } = render(<SizeChart measurements={undefined} />);
-
-    expect(getByText("Size reference")).toBeTruthy();
-    expect(getByRole("button", { name: "XXS" })).toBeTruthy();
-    expect(getByText("30-32 CM")).toBeTruthy();
+  it("renders null when a product has no saved measurements or size chart is disabled", () => {
+    const { container } = render(<SizeChart measurements={undefined} />);
+    expect(container.firstChild).toBeNull();
   });
 });

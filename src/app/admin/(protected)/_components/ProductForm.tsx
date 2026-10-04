@@ -777,7 +777,7 @@ export function ProductForm({
             {product?.createdAt && (
               <div className="flex items-center justify-between">
                 <span>Created</span>
-                <span className="font-mono text-stone-600">
+                <span className="font-mono text-stone-600" suppressHydrationWarning>
                   {new Date(product.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",

@@ -13,7 +13,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import type { Category, Product } from "@/types";
+import type { Category, Product, ShopFilterSettings } from "@/types";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { buildCategoryTree } from "@/lib/storefront/category-tree";
@@ -55,10 +55,11 @@ interface ShopCatalogProps {
   initialCategory?: string;
   titleOverride?: string;
   priceUnder?: number;
+  filterSettings?: ShopFilterSettings;
 }
 
 const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
-const COLOR_SWATCHES = [
+const DEFAULT_COLOR_SWATCHES = [
   { name: "Beige", bg: "#D4B376" },
   { name: "Black", bg: "#1A1A1A" },
   { name: "White", bg: "#FFFFFF", border: true },
@@ -67,7 +68,7 @@ const COLOR_SWATCHES = [
   { name: "Maroon", bg: "#800020" },
   { name: "Navy", bg: "#1F2937" },
 ];
-const ALL_FABRICS = ["Pure Cotton", "Banarasi Silk", "Linen Blend", "Chiffon", "Georgette"];
+const DEFAULT_ALL_FABRICS = ["Pure Cotton", "Banarasi Silk", "Linen Blend", "Chiffon", "Georgette"];
 
 export function ShopCatalog({
   products,
@@ -76,13 +77,36 @@ export function ShopCatalog({
   initialCategory,
   titleOverride,
   priceUnder,
+  filterSettings,
 }: ShopCatalogProps) {
+  const minPriceLimit = filterSettings?.minPrice ?? 500;
+  const maxPriceLimit = filterSettings?.maxPrice ?? 15000;
+  const priceStep = filterSettings?.priceStep ?? 100;
+
+  const colorSwatches = useMemo(() => {
+    if (filterSettings?.colors && filterSettings.colors.length > 0) {
+      return filterSettings.colors.map((c) => ({
+        name: c.name,
+        bg: c.hex,
+        border: c.hex.toLowerCase() === "#ffffff" || c.hex.toLowerCase() === "#fff",
+      }));
+    }
+    return DEFAULT_COLOR_SWATCHES;
+  }, [filterSettings?.colors]);
+
+  const fabricsList = useMemo(() => {
+    if (filterSettings?.fabrics && filterSettings.fabrics.length > 0) {
+      return filterSettings.fabrics;
+    }
+    return DEFAULT_ALL_FABRICS;
+  }, [filterSettings?.fabrics]);
+
   // Filters State
   const [selectedTab, setSelectedTab] = useState<string>(initialCategory || "all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState<number>(
-    priceUnder ?? 15000
+    priceUnder ?? maxPriceLimit
   );
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
@@ -111,7 +135,7 @@ export function ShopCatalog({
     setSelectedTab("all");
     setSelectedCategories([]);
     setSelectedSizes([]);
-    setMaxPrice(15000);
+    setMaxPrice(maxPriceLimit);
     setSelectedColors([]);
     setSelectedFabrics([]);
     setCurrentPage(1);
@@ -238,7 +262,7 @@ export function ShopCatalog({
     selectedTab !== "all" ||
     selectedCategories.length > 0 ||
     selectedSizes.length > 0 ||
-    maxPrice < 15000 ||
+    maxPrice < maxPriceLimit ||
     selectedColors.length > 0 ||
     selectedFabrics.length > 0;
 
@@ -379,7 +403,13 @@ export function ShopCatalog({
               <div
                 className="absolute top-0 -translate-x-1/2 pointer-events-none transition-all duration-75"
                 style={{
-                  left: `${Math.min(94, Math.max(6, ((maxPrice - 500) / (15000 - 500)) * 100))}%`,
+                  left: `${Math.min(
+                    94,
+                    Math.max(
+                      6,
+                      ((maxPrice - minPriceLimit) / Math.max(1, maxPriceLimit - minPriceLimit)) * 100
+                    )
+                  )}%`,
                 }}
               >
                 <div className="bg-[#A37B34] text-white text-[11px] font-bold px-2 py-0.5 rounded shadow-sm relative whitespace-nowrap flex items-center justify-center">
@@ -390,13 +420,14 @@ export function ShopCatalog({
 
               {/* Range Input Slider with Dynamic Fill Color */}
               {(() => {
-                const fillPercentage = ((maxPrice - 500) / (15000 - 500)) * 100;
+                const fillPercentage =
+                  ((maxPrice - minPriceLimit) / Math.max(1, maxPriceLimit - minPriceLimit)) * 100;
                 return (
                   <input
                     type="range"
-                    min={500}
-                    max={15000}
-                    step={100}
+                    min={minPriceLimit}
+                    max={maxPriceLimit}
+                    step={priceStep}
                     value={maxPrice}
                     onChange={(e) => {
                       setMaxPrice(Number(e.target.value));
@@ -415,7 +446,7 @@ export function ShopCatalog({
             <div className="flex items-center justify-between text-ink pt-1.5">
               <div className="flex flex-col">
                 <span className="text-[10px] text-muted uppercase tracking-wider font-medium">Min Price</span>
-                <span className="font-bold text-gray-800 text-xs sm:text-sm">₹500</span>
+                <span className="font-bold text-gray-800 text-xs sm:text-sm">₹{minPriceLimit.toLocaleString("en-IN")}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-muted uppercase tracking-wider font-medium">Max Selected</span>
@@ -443,7 +474,7 @@ export function ShopCatalog({
 
         {openSections.color && (
           <div className="flex items-center gap-2.5 pt-3 flex-wrap">
-            {COLOR_SWATCHES.map((c) => {
+            {colorSwatches.map((c) => {
               const isSelected = selectedColors.includes(c.name);
               return (
                 <button
@@ -490,7 +521,7 @@ export function ShopCatalog({
 
         {openSections.fabric && (
           <div className="flex flex-col gap-2 pt-3">
-            {ALL_FABRICS.map((fabric) => {
+            {fabricsList.map((fabric) => {
               const isChecked = selectedFabrics.includes(fabric);
               return (
                 <label
@@ -680,7 +711,7 @@ export function ShopCatalog({
               <Sparkles className="h-10 w-10 text-[#A37B34] opacity-60" />
               <h3 className="font-serif text-2xl text-ink">No Products Found</h3>
               <p className="text-muted max-w-md text-sm">
-                We couldn't find any products matching your selected filter criteria. Try resetting your filters.
+                We couldn&apos;t find any products matching your selected filter criteria. Try resetting your filters.
               </p>
               <button
                 type="button"

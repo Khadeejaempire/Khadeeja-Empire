@@ -164,6 +164,14 @@ export function MobileNav({ categories }: { categories: Category[] }) {
               <ArrowRight size={15} className="text-muted" />
             </Link>
             <Link
+              href="/#testimonials"
+              onClick={closeDrawer}
+              className="py-3 text-[17px] sm:text-lg font-medium tracking-wide text-ink border-b border-border/40 hover:text-primary transition-colors flex items-center justify-between"
+            >
+              <span>Happy Customers</span>
+              <ArrowRight size={15} className="text-muted" />
+            </Link>
+            <Link
               href="/contact"
               onClick={closeDrawer}
               className="py-3 text-[17px] sm:text-lg font-medium tracking-wide text-ink hover:text-primary transition-colors flex items-center justify-between"

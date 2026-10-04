@@ -51,6 +51,25 @@ export default async function ReviewsPage() {
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-stone-700">{review.body}</p>
+                {(review.photoUrl || review.videoUrl) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    {review.photoUrl && (
+                      <div className="relative aspect-[4/5] w-20 overflow-hidden rounded-lg border border-stone-200 bg-stone-100 shadow-2xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={review.photoUrl}
+                          alt="Customer review wear"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {review.videoUrl && (
+                      <div className="relative aspect-[9/16] w-16 overflow-hidden rounded-lg border border-stone-800 bg-stone-900 shadow-2xs">
+                        <video src={review.videoUrl} controls className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-stone-100 pt-4">
                   {reviewStatuses.map(({ value, label }) => (
                     <form action={updateReviewAction} key={value}>

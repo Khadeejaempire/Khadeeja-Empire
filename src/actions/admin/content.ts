@@ -79,7 +79,7 @@ async function saveTestimonialMutation(input: unknown, id?: string) {
   return adminMutation(async () => {
     const raw = inputObject(input, {
       booleans: ["active"], numbers: ["sortOrder", "rating"],
-      nullable: ["role"],
+      nullable: ["role", "photoUrl", "videoUrl"],
     }) as Record<string, unknown>;
     const testimonialId = recordId(raw, id);
     const value = testimonialMutationSchema.parse(raw);

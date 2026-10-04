@@ -369,8 +369,8 @@ img {
 }
 
 .brand-logo-navbar {
-  width: 82px;
-  height: 82px;
+  width: 60px;
+  height: 60px;
   aspect-ratio: 1 / 1;
 }
 
@@ -941,8 +941,8 @@ html {
   }
 
   .brand-logo-navbar {
-    width: 64px;
-    height: 64px;
+    width: 50px;
+    height: 50px;
   }
 }
 
@@ -1131,6 +1131,16 @@ html {
 .home-theme :is(a, button, input, select, textarea):focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
+}
+
+.no-focus-outline,
+.no-focus-outline:focus,
+.no-focus-outline:focus-visible,
+.home-theme input.no-focus-outline:focus-visible,
+.home-theme :is(a, button, input, select, textarea).no-focus-outline:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

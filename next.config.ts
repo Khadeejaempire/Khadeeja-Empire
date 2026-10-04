@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       : [],
   },
   experimental: {
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
     optimizePackageImports: ["lucide-react"],
   },
 };

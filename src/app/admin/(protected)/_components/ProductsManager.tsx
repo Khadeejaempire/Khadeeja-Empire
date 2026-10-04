@@ -28,10 +28,52 @@ import {
   ShoppingBag,
   TrendingUp,
   Percent,
+  Copy,
 } from "lucide-react";
 import type { CategoryRecord, ProductRecord } from "@/lib/admin/types";
 import { deleteProductAction, toggleProductAction } from "@/actions/admin/products";
 import { adminActionMessage } from "@/lib/admin/errors";
+
+function SkuBadge({ sku, className = "" }: { sku: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sku) return;
+    try {
+      await navigator.clipboard.writeText(sku);
+      setCopied(true);
+      toast.success(`Copied SKU: ${sku}`, { duration: 1800 });
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`Click to copy SKU: ${sku}`}
+      className={`group/sku inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold transition-all duration-150 cursor-pointer select-all active:scale-95 ${
+        copied
+          ? "bg-emerald-50 text-emerald-700 border border-emerald-300 ring-2 ring-emerald-100"
+          : "bg-stone-100/90 text-stone-800 border border-stone-300/80 hover:bg-[#fbf5f3] hover:text-[#7f2d22] hover:border-[#9c5247]/40 shadow-2xs"
+      } ${className}`}
+    >
+      <span className="text-[10px] text-stone-400 group-hover/sku:text-[#9c5247]/70 transition-colors">
+        SKU:
+      </span>
+      <span className="tracking-tight">{sku}</span>
+      {copied ? (
+        <Check className="h-3 w-3 text-emerald-600 animate-in zoom-in duration-150 shrink-0" />
+      ) : (
+        <Copy className="h-2.5 w-2.5 text-stone-400 group-hover/sku:text-[#7f2d22] transition-colors shrink-0" />
+      )}
+    </button>
+  );
+}
 
 type ViewMode = "table" | "grid";
 type SortOption = "newest" | "price-asc" | "price-desc" | "name-asc" | "stock";
@@ -705,20 +747,18 @@ export function ProductsManager({
                               )}
                             </div>
 
-                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-stone-400 truncate">
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
                               {product.sku ? (
-                                <span className="font-mono text-stone-600 font-medium">
-                                  SKU: {product.sku}
-                                </span>
+                                <SkuBadge sku={product.sku} />
                               ) : (
-                                <span className="font-mono truncate">
+                                <span className="font-mono text-[11px] text-stone-400 truncate">
                                   /{product.slug.slice(0, 18)}{product.slug.length > 18 ? "…" : ""}
                                 </span>
                               )}
                               {product.sizes && product.sizes.length > 0 && (
                                 <>
                                   <span className="text-stone-300">·</span>
-                                  <span className="text-stone-500 truncate">
+                                  <span className="text-stone-500 text-[11px] truncate">
                                     {product.sizes.slice(0, 3).join(", ")}
                                     {product.sizes.length > 3 ? "…" : ""}
                                   </span>
@@ -949,10 +989,13 @@ export function ProductsManager({
                       </Link>
                     </div>
 
-                    <p className="mt-0.5 text-xs text-stone-400 truncate">
-                      /{product.slug}
-                      {product.sku ? ` · ${product.sku}` : ""}
-                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      {product.sku ? (
+                        <SkuBadge sku={product.sku} />
+                      ) : (
+                        <p className="text-xs text-stone-400 truncate">/{product.slug}</p>
+                      )}
+                    </div>
 
                     {/* Sizes chips */}
                     {product.sizes && product.sizes.length > 0 && (
@@ -1118,7 +1161,9 @@ export function ProductsManager({
                 {previewProduct.sku && (
                   <div>
                     <span className="text-stone-400">SKU</span>
-                    <p className="font-mono text-stone-800 mt-0.5">{previewProduct.sku}</p>
+                    <div className="mt-0.5">
+                      <SkuBadge sku={previewProduct.sku} />
+                    </div>
                   </div>
                 )}
                 {previewProduct.sizes && previewProduct.sizes.length > 0 && (

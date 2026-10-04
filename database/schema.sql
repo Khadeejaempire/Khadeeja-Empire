@@ -22,6 +22,7 @@ create table if not exists categories (
   image text,
   parent_id text references categories(id) on delete set null,
   active boolean not null default true,
+  is_featured boolean not null default false,
   sort_order integer not null default 0,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
@@ -223,6 +224,8 @@ create table if not exists reviews (
   body text not null,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   is_home_featured boolean not null default false,
+  photo_url text,
+  video_url text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -283,6 +286,8 @@ create table if not exists testimonials (
   quote text not null,
   role text,
   rating integer not null default 5 check (rating between 1 and 5),
+  photo_url text,
+  video_url text,
   active boolean not null default true,
   sort_order integer not null default 0
 );

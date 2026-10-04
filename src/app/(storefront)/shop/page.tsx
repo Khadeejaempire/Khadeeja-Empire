@@ -7,6 +7,7 @@ import {
   toStorefrontCategory,
   toStorefrontProduct,
 } from "@/lib/storefront/adapters";
+import { getShopFilterSettings } from "@/lib/storefront/filters";
 
 export const metadata: Metadata = {
   title: "Shop All",
@@ -28,10 +29,11 @@ export default async function ShopPage({
   const priceUnder = rawPriceUnder ? Number(rawPriceUnder) : undefined;
 
   const provider = getDataProvider();
-  const [productRecords, categoryRecords, reviewRecords] = await Promise.all([
+  const [productRecords, categoryRecords, reviewRecords, filterSettings] = await Promise.all([
     provider.listProducts({ active: true }),
     provider.listCategories({ active: true }),
     provider.listReviews(),
+    getShopFilterSettings(),
   ]);
 
   const products = attachProductRatings(productRecords.map(toStorefrontProduct), reviewRecords);
@@ -44,6 +46,7 @@ export default async function ShopPage({
           products={products}
           categories={categories}
           priceUnder={priceUnder}
+          filterSettings={filterSettings}
         />
       </Container>
     </div>

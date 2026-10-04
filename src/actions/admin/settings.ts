@@ -192,3 +192,30 @@ export async function deleteDiscoveryMenuEntryAction(formData: FormData): Promis
 export async function reorderDiscoveryMenuEntriesAction(formData: FormData): Promise<void> {
   await finishFormAction(reorderDiscoveryMenuEntriesMutation(formData));
 }
+
+export async function saveShopFilterSettingsAction(formData: FormData): Promise<void> {
+  const jsonStr = formData.get("filterSettings");
+  if (!jsonStr || typeof jsonStr !== "string") {
+    throw new ValidationError("Filter settings data is required.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    throw new ValidationError("Invalid JSON format for filter settings.");
+  }
+
+  await finishFormAction(
+    adminMutation(
+      async () => {
+        const provider = getDataProvider();
+        return provider.upsertSetting(
+          "shop.filter_settings",
+          parsed as unknown as import("@/lib/admin/types").JsonValue,
+          "Shop catalog price range, color swatches, and fabric filters."
+        );
+      },
+      ["/admin/settings/filters", "/shop", "/collections"]
+    )
+  );
+}

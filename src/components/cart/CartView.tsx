@@ -206,7 +206,7 @@ export function CartView() {
                     </p>
                   ) : (
                     <p className="text-[13px] text-ink font-medium leading-snug">
-                      Congratulations! You've unlocked <span className="font-bold text-[#a27b53]">FREE Shipping!</span>
+                      Congratulations! You&apos;ve unlocked <span className="font-bold text-[#a27b53]">FREE Shipping!</span>
                     </p>
                   )}
                 </div>
@@ -261,7 +261,7 @@ export function CartView() {
               <Heart size={48} strokeWidth={1} />
             </div>
             <div>
-              <h3 className="text-xl md:text-2xl font-display font-medium text-ink mb-1">Don't see what you love?</h3>
+              <h3 className="text-xl md:text-2xl font-display font-medium text-ink mb-1">Don&apos;t see what you love?</h3>
               <p className="text-sm text-muted">Explore more styles and find your next favorite.</p>
             </div>
           </div>

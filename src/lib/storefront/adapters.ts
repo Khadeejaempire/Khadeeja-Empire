@@ -88,6 +88,7 @@ export function toStorefrontCategory(record: CategoryRecord): Category {
     description: record.description ?? "",
     image: record.image ?? "",
     parentId: record.parentId ?? null,
+    isFeatured: Boolean(record.isFeatured),
   };
 }
 

@@ -36,6 +36,11 @@ export function CategoryForm({
   const [slug, setSlug] = useState(category?.slug || "");
   const [autoSlug, setAutoSlug] = useState(!category);
   const [active, setActive] = useState(category?.active !== false);
+  const [isFeatured, setIsFeatured] = useState(Boolean(category?.isFeatured));
+
+  const otherFeaturedCount = categories.filter(
+    (c) => Boolean(c.isFeatured) && c.id !== category?.id
+  ).length;
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -237,6 +242,51 @@ export function CategoryForm({
                   {active
                     ? "Available in navigation and filters"
                     : "Hidden from storefront navigation"}
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {/* Feature in Navbar Switch (Max 3 Limit) */}
+          <div className="pt-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="hidden"
+                name="isFeatured"
+                value={isFeatured ? "true" : "false"}
+              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isFeatured}
+                onClick={() => {
+                  if (!isFeatured && otherFeaturedCount >= 3) {
+                    toast.error(
+                      "Maximum 3 categories hi navbar mein feature ho sakti hain! Pehle kisi ek category ko unfeature karein."
+                    );
+                    return;
+                  }
+                  setIsFeatured(!isFeatured);
+                }}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isFeatured ? "bg-amber-600" : "bg-stone-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    isFeatured ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <div className="text-xs">
+                <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                  <span>{isFeatured ? "Featured in Navbar ⭐" : "Standard Category"}</span>
+                  <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-semibold">
+                    Navbar Slot ({otherFeaturedCount + (isFeatured ? 1 : 0)}/3)
+                  </span>
+                </span>
+                <span className="text-stone-400">
+                  Directly showcase this category in the top navigation strip (maximum 3 allowed)
                 </span>
               </div>
             </label>

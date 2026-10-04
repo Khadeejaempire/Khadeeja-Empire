@@ -10,6 +10,7 @@ import {
   toStorefrontProduct,
 } from "@/lib/storefront/adapters";
 import { categoryGroupMap } from "@/lib/storefront/category-tree";
+import { getShopFilterSettings } from "@/lib/storefront/filters";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -43,6 +44,7 @@ export default async function CollectionPage({ params }: PageProps) {
   let productRecords: any[] = [];
   let categoryRecords: any[] = [];
   let reviewRecords: any[] = [];
+  let filterSettings: import("@/types").ShopFilterSettings | undefined = undefined;
 
   try {
     const provider = getDataProvider();
@@ -52,12 +54,14 @@ export default async function CollectionPage({ params }: PageProps) {
       provider.listProducts({ active: true }).catch(() => []),
       provider.listCategories({ active: true }).catch(() => []),
       provider.listReviews().catch(() => []),
+      getShopFilterSettings(),
     ]);
     collectionRecord = results[0];
     categoryRecord = results[1];
     productRecords = results[2] || [];
     categoryRecords = results[3] || [];
     reviewRecords = results[4] || [];
+    filterSettings = results[5];
   } catch (err) {
     console.error("Error fetching collection page data:", err);
   }
@@ -90,6 +94,7 @@ export default async function CollectionPage({ params }: PageProps) {
           categoryGroups={categoryGroups}
           initialCategory={slug}
           titleOverride={displayName}
+          filterSettings={filterSettings}
         />
       </Container>
     </div>

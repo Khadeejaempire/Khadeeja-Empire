@@ -65,6 +65,7 @@ export interface Category {
   description: string;
   image: string;
   parentId?: string | null;
+  isFeatured?: boolean;
 }
 
 export interface Collection {
@@ -128,4 +129,17 @@ export interface SiteConfig {
     label: string;
   }[];
   navigation: NavItem[];
+}
+
+export interface ShopFilterColor {
+  name: string;
+  hex: string;
+}
+
+export interface ShopFilterSettings {
+  minPrice: number;
+  maxPrice: number;
+  priceStep: number;
+  colors: ShopFilterColor[];
+  fabrics: string[];
 }

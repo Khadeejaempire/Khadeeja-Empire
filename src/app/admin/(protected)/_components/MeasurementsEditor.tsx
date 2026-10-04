@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { SizeChartMeasurements } from "@/lib/admin/types";
 
 interface MeasurementsEditorProps {
@@ -15,9 +15,26 @@ export function MeasurementsEditor({ value, onChange }: MeasurementsEditorProps)
   const [newSize, setNewSize] = useState("");
   const [measurementKeys, setMeasurementKeys] = useState<string[]>(["chest", "waist", "hip"]);
 
+  useEffect(() => {
+    setEnabled(value?.enabled ?? false);
+    setUnit(value?.unit ?? "cm");
+    setSizes(value?.sizes ?? []);
+  }, [value]);
+
   const handleToggle = (checked: boolean) => {
     setEnabled(checked);
-    updateValue(checked, unit, sizes);
+    const nextSizes = checked && sizes.length === 0 ? [
+      { size: "XXS", chest: "30-32", waist: "24-26", hip: "32-34" },
+      { size: "XS", chest: "32-34", waist: "26-28", hip: "34-36" },
+      { size: "S", chest: "34-36", waist: "28-30", hip: "36-38" },
+      { size: "M", chest: "36-38", waist: "30-32", hip: "38-40" },
+      { size: "L", chest: "38-40", waist: "32-34", hip: "40-42" },
+      { size: "XL", chest: "40-42", waist: "34-36", hip: "42-44" },
+    ] : sizes;
+    if (checked && sizes.length === 0) {
+      setSizes(nextSizes);
+    }
+    updateValue(checked, unit, nextSizes);
   };
 
   const handleUnitChange = (newUnit: "cm" | "inches") => {

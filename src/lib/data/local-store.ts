@@ -263,6 +263,8 @@ const storedReviewSchema = z
     body: z.string().min(1),
     status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
     isHomeFeatured: storedNullableBoolean,
+    photoUrl: storedNullableString,
+    videoUrl: storedNullableString,
     createdAt: storedTimestamp,
     updatedAt: storedTimestamp,
   })
@@ -333,6 +335,8 @@ const storedTestimonialSchema = z
     quote: z.string().min(1),
     role: storedNullableString,
     rating: storedNullableNumber,
+    photoUrl: storedNullableString,
+    videoUrl: storedNullableString,
     active: storedNullableBoolean,
     sortOrder: storedNullableNumber,
   })

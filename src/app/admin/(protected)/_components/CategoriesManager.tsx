@@ -24,9 +24,14 @@ import {
   ArrowRight,
   RefreshCw,
   X,
+  Star,
 } from "lucide-react";
 import type { CategoryRecord, DiscoveryMenuEntryRecord } from "@/lib/admin/types";
-import { deleteCategoryAction, toggleCategoryAction } from "@/actions/admin/categories";
+import {
+  deleteCategoryAction,
+  toggleCategoryAction,
+  toggleCategoryFeaturedAction,
+} from "@/actions/admin/categories";
 import { adminActionMessage } from "@/lib/admin/errors";
 import { DiscoveryMenuEditor } from "./DiscoveryMenuEditor";
 
@@ -93,9 +98,10 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
   const stats = useMemo(() => {
     const total = categories.length;
     const active = categories.filter((c) => c.active !== false).length;
+    const featured = categories.filter((c) => Boolean(c.isFeatured)).length;
     const totalProducts = categories.reduce((sum, c) => sum + (c.productCount ?? 0), 0);
     const rootCount = categories.filter((c) => !c.parentId).length;
-    return { total, active, totalProducts, rootCount };
+    return { total, active, featured, totalProducts, rootCount };
   }, [categories]);
 
   // Filtered entries
@@ -104,6 +110,7 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
       const isActive = category.active !== false;
       if (selectedStatus === "active" && !isActive) return false;
       if (selectedStatus === "inactive" && isActive) return false;
+      if (selectedStatus === "featured" && !category.isFeatured) return false;
 
       if (search.trim()) {
         const q = search.trim().toLowerCase();
@@ -133,6 +140,39 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
         toast.success(!currentActive ? "Category published." : "Category set to draft.");
       } catch (error) {
         toast.error(adminActionMessage(error, "Could not update status."));
+      } finally {
+        setPendingId(null);
+      }
+    });
+  };
+
+  // Toggle Category Featured in Navbar (Max 3 Limit)
+  const handleToggleFeatured = (id: string, currentFeatured: boolean) => {
+    if (!currentFeatured && stats.featured >= 3) {
+      toast.error(
+        "Maximum 3 categories hi navbar mein feature ho sakti hain! Pehle kisi ek category ko unfeature karein."
+      );
+      return;
+    }
+
+    setPendingId(id);
+    startTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.set("id", id);
+        formData.set("isFeatured", String(!currentFeatured));
+        await toggleCategoryFeaturedAction(formData);
+
+        setCategories((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, isFeatured: !currentFeatured } : c))
+        );
+        toast.success(
+          !currentFeatured
+            ? "Category navbar mein feature kar di gayi."
+            : "Category navbar se unfeature ho gayi."
+        );
+      } catch (error) {
+        toast.error(adminActionMessage(error, "Could not update featured status."));
       } finally {
         setPendingId(null);
       }
@@ -197,7 +237,8 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
       </div>
 
       {/* ── Top Metric KPI Cards ── */}
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      {/* ── Top Metric KPI Cards ── */}
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
         {/* Total Categories */}
         <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-4 sm:p-5 shadow-2xs transition hover:shadow-md">
           <div className="flex items-center justify-between">
@@ -240,13 +281,35 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
           </div>
         </div>
 
+        {/* Featured in Navbar (Max 3 Limit) */}
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-4 sm:p-5 shadow-2xs transition hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              Featured in Nav
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-800 font-sans">
+              {stats.featured}{" "}
+              <span className="text-sm font-semibold text-stone-400">/ 3</span>
+            </span>
+            <span className="text-xs text-stone-400 font-medium">max limit</span>
+          </div>
+          <div className="mt-2 text-[11px] text-stone-500">
+            Showcased in top navbar
+          </div>
+        </div>
+
         {/* Catalog Products */}
         <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-4 sm:p-5 shadow-2xs transition hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
               Assigned Products
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
               <Package className="h-4 w-4" />
             </div>
           </div>
@@ -313,6 +376,7 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
               className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 outline-none transition hover:border-stone-300 focus:border-[#9c5247]"
             >
               <option value="all">All Categories ({categories.length})</option>
+              <option value="featured">Featured in Nav ({stats.featured}/3)</option>
               <option value="active">Active ({stats.active})</option>
               <option value="inactive">Draft / Disabled ({categories.length - stats.active})</option>
             </select>
@@ -382,6 +446,7 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
                     <th className="px-5 py-3.5">Slug URL</th>
                     <th className="px-5 py-3.5">Catalog Products</th>
                     <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5 text-center">Featured in Nav</th>
                     <th className="px-5 py-3.5 text-right min-w-[200px]">Actions</th>
                   </tr>
                 </thead>
@@ -473,6 +538,36 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
                             />
                             {isActive ? "Published" : "Draft"}
                           </span>
+                        </td>
+
+                        {/* Featured in Nav (Max 3 Limit) */}
+                        <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFeatured(category.id, Boolean(category.isFeatured))}
+                            disabled={isBusy}
+                            title={
+                              category.isFeatured
+                                ? "Remove from top navbar"
+                                : stats.featured >= 3
+                                ? "Navbar limit full (3/3). Unfeature another first."
+                                : "Feature in top navbar"
+                            }
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer ${
+                              category.isFeatured
+                                ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                                : "bg-white text-stone-500 border-stone-200 hover:border-amber-300 hover:text-amber-800 hover:bg-amber-50/50"
+                            }`}
+                          >
+                            <Star
+                              className={`h-3.5 w-3.5 ${
+                                category.isFeatured
+                                  ? "fill-amber-500 text-amber-500"
+                                  : "text-stone-400"
+                              }`}
+                            />
+                            <span>{category.isFeatured ? "Featured ⭐" : "Feature in Nav"}</span>
+                          </button>
                         </td>
 
                         {/* Action Buttons (High Contrast, Clearly Visible) */}
@@ -581,20 +676,36 @@ export function CategoriesManager({ categories: initialCategories, discovery }: 
                       </div>
                     </div>
 
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${
-                        isActive
-                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          : "bg-stone-100 text-stone-600 border-stone-200"
-                      }`}
-                    >
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isActive ? "bg-emerald-500" : "bg-stone-400"
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${
+                          isActive
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-stone-100 text-stone-600 border-stone-200"
                         }`}
-                      />
-                      {isActive ? "Live" : "Draft"}
-                    </span>
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive ? "bg-emerald-500" : "bg-stone-400"
+                          }`}
+                        />
+                        {isActive ? "Live" : "Draft"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFeatured(category.id, Boolean(category.isFeatured))}
+                        disabled={isBusy}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition active:scale-95 cursor-pointer ${
+                          category.isFeatured
+                            ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                            : "bg-white text-stone-500 border-stone-200 hover:border-amber-300 hover:text-amber-800"
+                        }`}
+                      >
+                        <Star className={`h-3 w-3 ${category.isFeatured ? "fill-amber-500 text-amber-500" : "text-stone-400"}`} />
+                        <span>{category.isFeatured ? "Featured ⭐" : "Feature"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Subtitle / Parent info */}

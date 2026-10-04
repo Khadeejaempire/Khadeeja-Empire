@@ -108,7 +108,7 @@ export const productInformationMutationSchema = z.object({
             chest: trimmedString.max(100).nullable().optional(),
             waist: trimmedString.max(100).nullable().optional(),
             hip: trimmedString.max(100).nullable().optional(),
-          })
+          }).passthrough()
         )
         .max(50)
         .nullable()
@@ -179,6 +179,7 @@ export const categoryMutationSchema = z.object({
   image: nullableAsset,
   parentId: idSchema.nullable().optional(),
   active: z.boolean().nullable().optional(),
+  isFeatured: z.boolean().nullable().optional(),
   sortOrder: z.number().int().min(0).nullable().optional(),
 });
 
@@ -372,6 +373,8 @@ export const reviewMutationSchema = z.object({
   body: trimmedString.min(1).max(5000),
   status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
   isHomeFeatured: z.boolean().nullable().optional(),
+  photoUrl: trimmedString.max(2048).nullable().optional(),
+  videoUrl: trimmedString.max(2048).nullable().optional(),
 });
 
 export const inquiryMutationSchema = z.object({
@@ -407,6 +410,8 @@ export const testimonialMutationSchema = z.object({
   quote: trimmedString.min(1).max(2000),
   role: trimmedString.max(160).nullable().optional(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
+  photoUrl: safeAssetUrlSchema.nullable().optional(),
+  videoUrl: safeAssetUrlSchema.nullable().optional(),
   active: z.boolean().nullable().optional(),
   sortOrder: z.number().int().min(0).nullable().optional(),
 });
