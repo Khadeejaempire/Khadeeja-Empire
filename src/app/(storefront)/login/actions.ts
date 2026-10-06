@@ -13,7 +13,6 @@ import {
   requestEmailOtpChallenge,
   verifyEmailOtpChallenge,
   OtpRateLimitError,
-  OTP_TTL_MS,
 } from "@/lib/auth/email-otp";
 import { sendBrevoEmail, signupOtpContent, loginOtpContent, passwordResetContent } from "@/lib/brevo/server";
 
@@ -122,15 +121,11 @@ async function finalizeSignup(input: {
 
 export async function requestSignupOtp(formData: FormData) {
   const emailRaw = formData.get("email") as string;
-  const password = formData.get("password") as string;
   const fullName = formData.get("fullName") as string;
   const phone = (formData.get("phone") as string) || "";
 
-  if (!emailRaw || !password || !fullName) {
+  if (!emailRaw || !fullName) {
     return { ok: false as const, error: "All fields are required." };
-  }
-  if (password.length < 6) {
-    return { ok: false as const, error: "Password must be at least 6 characters." };
   }
 
   let email: string;
@@ -147,7 +142,7 @@ export async function requestSignupOtp(formData: FormData) {
   }
 
   const store = createProviderEmailOtpChallengeStore(dataProvider);
-  const payload = JSON.stringify({ password, fullName, phone });
+  const payload = JSON.stringify({ fullName, phone });
 
   let challenge;
   try {
@@ -194,10 +189,10 @@ export async function verifySignupOtp(formData: FormData) {
     return { error: "That code is invalid or has expired." };
   }
 
-  const pending = JSON.parse(result.payload) as { password: string; fullName: string; phone: string };
+  const pending = JSON.parse(result.payload) as { fullName: string; phone: string };
   const finalized = await finalizeSignup({
     email,
-    password: pending.password,
+    password: randomUUID(),
     fullName: pending.fullName,
     phone: pending.phone,
   });
@@ -226,18 +221,20 @@ export async function requestLoginOtp(formData: FormData) {
     (c) => c.email?.toLowerCase() === email
   );
 
-  // Don't reveal whether an account exists: return a generic success shape
-  // backed by an unusable challenge id, so verification simply fails as "invalid".
-  const noAccountResponse = { ok: true as const, challengeId: randomUUID(), expiresAt: Date.now() + OTP_TTL_MS };
-
   if (!customer || customer.status === "inactive") {
-    return noAccountResponse;
+    return {
+      ok: false as const,
+      error: "Account doesn't exist. Please register before login.",
+    };
   }
 
   const adminClient = createServiceRoleClient();
   const { data, error } = await adminClient.auth.admin.generateLink({ type: "magiclink", email });
   if (error || !data?.properties?.hashed_token) {
-    return noAccountResponse;
+    return {
+      ok: false as const,
+      error: "Account doesn't exist. Please register before login.",
+    };
   }
 
   const store = createProviderEmailOtpChallengeStore(dataProvider);

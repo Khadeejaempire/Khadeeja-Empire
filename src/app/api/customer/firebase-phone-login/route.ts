@@ -18,6 +18,7 @@ const requestSchema = z.object({
   idToken: z.string().min(1),
   next: z.string().optional(),
   fullName: z.string().trim().min(1).max(120).optional(),
+  allowCreate: z.boolean().default(false),
 }).strict();
 
 export async function POST(request: NextRequest) {
@@ -41,6 +42,15 @@ export async function POST(request: NextRequest) {
 
     const phone = normalizePhone(decoded.phone_number);
     const provider = getDataProvider();
+    const existing = (await provider.listCustomers({ search: phone })).find(
+      (customer) => customer.phone === phone
+    );
+    if (!existing && !parsed.data.allowCreate) {
+      return NextResponse.json(
+        { error: "Account doesn't exist. Please register before login." },
+        { status: 404 }
+      );
+    }
     const customer = await provider.upsertCustomerByPhone(phone, {
       status: "active",
       ...(parsed.data.fullName ? { name: parsed.data.fullName } : {}),
