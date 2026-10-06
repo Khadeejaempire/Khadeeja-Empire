@@ -126,7 +126,7 @@ export async function requestSignupOtp(formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const phone = (formData.get("phone") as string) || "";
 
-  if (!emailRaw || !password || !fullName || !phone) {
+  if (!emailRaw || !password || !fullName) {
     return { ok: false as const, error: "All fields are required." };
   }
   if (password.length < 6) {

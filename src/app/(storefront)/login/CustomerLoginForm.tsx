@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react";
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import {
   login,
   requestSignupOtp,
@@ -12,7 +15,7 @@ import {
 } from "./actions";
 
 type AuthMode = "login" | "signup" | "forgot";
-type LoginMethod = "password" | "otp";
+type LoginMethod = "password" | "emailOtp" | "phoneOtp";
 type Step = "details" | "code";
 
 export function CustomerLoginForm({ next, initialSuccess }: { next: string; initialSuccess?: string }) {
@@ -23,6 +26,9 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(initialSuccess ?? null);
+  const router = useRouter();
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -42,13 +48,34 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     setSuccess(null);
   };
 
-  const toggleLoginMethod = () => {
-    setLoginMethod(loginMethod === "password" ? "otp" : "password");
-    setStep("details");
-    setCode("");
-    setChallengeId(null);
-    setError(null);
-    setSuccess(null);
+  const normalizeFirebasePhone = (value: string) => {
+    const compact = value.trim().replace(/[\s()\-]/g, "");
+    return compact.startsWith("+") ? compact : `+91${compact}`;
+  };
+
+  const getRecaptchaVerifier = () => {
+    if (!recaptchaRef.current) {
+      recaptchaRef.current = new RecaptchaVerifier(getFirebaseAuth(), "firebase-recaptcha", {
+        size: "invisible",
+      });
+    }
+    return recaptchaRef.current;
+  };
+
+  const requestFirebasePhoneCode = async (value = phone) => {
+    const normalizedPhone = normalizeFirebasePhone(value);
+    if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
+      setError("Enter a valid phone number.");
+      return;
+    }
+
+    const confirmation = await signInWithPhoneNumber(
+      getFirebaseAuth(),
+      normalizedPhone,
+      getRecaptchaVerifier()
+    );
+    confirmationRef.current = confirmation;
+    setStep("code");
   };
 
   const handleBackToDetails = () => {
@@ -68,7 +95,21 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     if (next) formData.append("next", next);
 
     startTransition(async () => {
-      if (mode === "signup") {
+      if (mode === "login" && loginMethod === "phoneOtp") {
+        try {
+          await requestFirebasePhoneCode();
+          setSuccess("A new code has been sent.");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not send a new code. Please try again.");
+        }
+      } else if (mode === "signup" && isPhoneValue(email)) {
+        try {
+          await requestFirebasePhoneCode(email);
+          setSuccess("A new code has been sent.");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not send a new code. Please try again.");
+        }
+      } else if (mode === "signup") {
         formData.append("password", password);
         formData.append("fullName", fullName);
         formData.append("phone", phone);
@@ -79,7 +120,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           setChallengeId(res.challengeId);
           setSuccess("A new code has been sent.");
         }
-      } else if (mode === "login" && loginMethod === "otp") {
+      } else if (mode === "login" && loginMethod === "emailOtp") {
         const res = await requestLoginOtp(formData);
         if (!res.ok) {
           setError(res.error);
@@ -108,13 +149,52 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     }
 
     startTransition(async () => {
+      if (
+        (mode === "login" && loginMethod === "phoneOtp") ||
+        (mode === "signup" && step === "details" && isPhoneValue(email))
+      ) {
+        try {
+          if (step === "details") {
+            await requestFirebasePhoneCode(mode === "signup" ? email : phone);
+            return;
+          }
+
+          if (!confirmationRef.current) {
+            setError("Your verification session expired. Request a new code.");
+            setStep("details");
+            return;
+          }
+
+          const credential = await confirmationRef.current.confirm(code);
+          const idToken = await credential.user.getIdToken();
+          const response = await fetch("/api/customer/firebase-phone-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              idToken,
+              next,
+              fullName: mode === "signup" ? fullName : undefined,
+            }),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) {
+            setError(result.error || "Could not sign you in. Please try again.");
+            return;
+          }
+          router.push(result.redirectTo || "/");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not verify the code. Please try again.");
+        }
+        return;
+      }
+
       if (mode === "login" && loginMethod === "password") {
         const res = await login(formData);
         if (res && "error" in res && res.error) setError(res.error);
         return;
       }
 
-      if (mode === "login" && loginMethod === "otp") {
+      if (mode === "login" && loginMethod === "emailOtp") {
         if (step === "details") {
           const res = await requestLoginOtp(formData);
           if (!res.ok) {
@@ -155,10 +235,12 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   };
 
   const showNameAndPhone = mode === "signup" && step === "details";
-  const showEmailInput = step === "details";
+  const showEmailInput = step === "details" && !(mode === "login" && loginMethod === "phoneOtp");
+  const showPhoneInput = mode === "login" && loginMethod === "phoneOtp" && step === "details";
   const showPasswordField =
-    mode !== "forgot" && step === "details" && !(mode === "login" && loginMethod === "otp");
+    mode !== "forgot" && step === "details" && !(mode === "login" && loginMethod !== "password");
   const showCodeInput = step === "code";
+  const isPhoneValue = (value: string) => /^[+]?\d[\d\s()\-]{6,}$/.test(value.trim());
 
   return (
     <main className="flex min-h-[75vh] items-center justify-center px-4 py-10 sm:px-6">
@@ -173,9 +255,13 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           </h1>
           <p className="text-sm text-muted">
             {step === "code"
-              ? "Enter the 6-digit code we emailed you"
-              : mode === "login" && loginMethod === "otp"
+              ? mode === "login" && loginMethod === "phoneOtp"
+                ? "Enter the code sent to your phone"
+                : "Enter the 6-digit code we emailed you"
+              : mode === "login" && loginMethod === "emailOtp"
                 ? "Enter your email to receive a login code"
+                : mode === "login" && loginMethod === "phoneOtp"
+                  ? "Enter your phone number to receive a login code"
                 : mode === "login" && "Login to continue to your account"}
             {step === "details" && mode === "signup" && "Join Khadeeja Empire and shop your favorites"}
             {mode === "forgot" && "Enter your email address to receive a password reset link."}
@@ -202,8 +288,25 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             </div>
           )}
 
-          {/* Phone Number (Signup only) */}
-          {showNameAndPhone && (
+          {/* Email (details step, all modes) */}
+          {showEmailInput && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-ink">Phone Number/Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted h-5 w-5 stroke-[1.5]" />
+                <input
+                  type="text"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email or phone number"
+                  className="w-full h-12 pl-12 pr-4 bg-white border border-border rounded-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-ink placeholder:text-muted/60"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {showPhoneInput && (
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-ink">Phone Number</label>
               <div className="relative">
@@ -217,24 +320,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
                   required
                 />
               </div>
-            </div>
-          )}
-
-          {/* Email (details step, all modes) */}
-          {showEmailInput && (
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-ink">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted h-5 w-5 stroke-[1.5]" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full h-12 pl-12 pr-4 bg-white border border-border rounded-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-ink placeholder:text-muted/60"
-                  required
-                />
-              </div>
+              <p className="text-xs text-muted">Indian 10-digit numbers are sent as +91.</p>
             </div>
           )}
 
@@ -325,20 +411,12 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
                   </button>
                 </>
               ) : (
-                <span className="text-sm text-muted">We will email you a 6-digit code.</span>
+                <span className="text-sm text-muted">
+                  {loginMethod === "phoneOtp" ? "We will text you a verification code." : "We will email you a 6-digit code."}
+                </span>
               )}
             </div>
           )}
-          {mode === "login" && step === "details" && (
-            <button
-              type="button"
-              onClick={toggleLoginMethod}
-              className="text-sm text-[#a46e38] hover:underline"
-            >
-              {loginMethod === "password" ? "Login with OTP instead" : "Use password instead"}
-            </button>
-          )}
-
           {/* Submit Button */}
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           {success && <p className="text-green-500 text-sm text-center">{success}</p>}
@@ -350,8 +428,8 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             {isPending ? "Please wait..." : (
               <>
                 {mode === "login" && loginMethod === "password" && "LOGIN"}
-                {mode === "login" && loginMethod === "otp" && step === "details" && "SEND CODE"}
-                {mode === "login" && loginMethod === "otp" && step === "code" && "VERIFY & LOGIN"}
+                {mode === "login" && loginMethod !== "password" && step === "details" && "SEND CODE"}
+                {mode === "login" && loginMethod !== "password" && step === "code" && "VERIFY & LOGIN"}
                 {mode === "signup" && step === "details" && "SEND CODE"}
                 {mode === "signup" && step === "code" && "VERIFY & CREATE ACCOUNT"}
                 {mode === "forgot" && "SEND RESET LINK"}
@@ -360,6 +438,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           </button>
 
         </form>
+        <div id="firebase-recaptcha" />
 
         {/* Footer Toggle */}
         <p className="text-center text-sm text-ink mt-8">
