@@ -59,6 +59,11 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     return recaptchaRef.current;
   };
 
+  const resetRecaptcha = () => {
+    recaptchaRef.current?.clear();
+    recaptchaRef.current = null;
+  };
+
   const requestFirebasePhoneCode = async (value = phone) => {
     const normalizedPhone = normalizeFirebasePhone(value);
     if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
@@ -81,6 +86,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     setChallengeId(null);
     setError(null);
     setSuccess(null);
+    resetRecaptcha();
   };
 
   const handleResend = () => {
@@ -153,7 +159,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     startTransition(async () => {
       if (
         (mode === "login" && (loginMethod === "phoneOtp" || isPhoneValue(email))) ||
-        (mode === "signup" && step === "details" && isPhoneValue(email))
+        (mode === "signup" && isPhoneValue(email))
       ) {
         try {
           if (step === "details") {
@@ -164,6 +170,11 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           if (!confirmationRef.current) {
             setError("Your verification session expired. Request a new code.");
             setStep("details");
+            return;
+          }
+
+          if (!/^\d{6}$/.test(code)) {
+            setError("Enter the six-digit verification code.");
             return;
           }
 
@@ -186,6 +197,9 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           }
           router.push(result.redirectTo || "/");
         } catch (err) {
+          resetRecaptcha();
+          confirmationRef.current = null;
+          setStep("details");
           setError(err instanceof Error ? err.message : "Could not verify the code. Please try again.");
         }
         return;
