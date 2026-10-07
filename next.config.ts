@@ -4,6 +4,7 @@ const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
 const cloudinaryConfigured = Boolean(cloudName && !/^(your[-_]|replace[-_]?me|change[-_]?me|\$\{)/i.test(cloudName));
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["firebase-admin"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: cloudinaryConfigured

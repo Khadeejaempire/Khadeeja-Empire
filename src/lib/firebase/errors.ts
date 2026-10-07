@@ -77,7 +77,7 @@ export function firebasePhoneAuthErrorMessage(
         return `Phone verification failed (${code}). Please contact support with this code.`;
       }
       return phase === "send"
-        ? "Phone verification failed before Firebase returned an error code. Refresh the page and try again."
+        ? "Firebase or reCAPTCHA could not start phone verification. Retry once; if it continues, disable browser content blockers and refresh the page."
         : "Code verification failed before Firebase returned an error code. Request a new code and try again.";
   }
 }

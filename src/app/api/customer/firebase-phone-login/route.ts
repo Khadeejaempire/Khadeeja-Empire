@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getFirebaseAdminAuth } from "@/lib/firebase/server";
 import { getDataProvider } from "@/lib/data";
 import { getCustomerAuthConfig } from "@/lib/auth/config";
 import { authErrorResponse } from "@/lib/auth/http";
@@ -82,6 +81,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Keep the Node-only Admin SDK out of route module initialization. If the
+    // deployment runtime is misconfigured, the handler can still return JSON.
+    const { getFirebaseAdminAuth } = await import("@/lib/firebase/server");
     const decoded = await getFirebaseAdminAuth().verifyIdToken(parsed.data.idToken, true);
     if (!decoded.phone_number) {
       return NextResponse.json({ error: "Firebase did not return a phone number." }, { status: 401 });

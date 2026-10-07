@@ -40,6 +40,15 @@ describe("Firebase phone login route", () => {
     vi.unstubAllEnvs();
   });
 
+  it("rejects malformed requests before loading Firebase Admin", async () => {
+    const response = await POST(request({}));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "The verification request is invalid." });
+    expect(verifyIdToken).not.toHaveBeenCalled();
+    expect(getDataProvider).not.toHaveBeenCalled();
+  });
+
   it("logs in an existing customer whose stored phone uses the legacy local format", async () => {
     const createCustomer = vi.fn();
     getDataProvider.mockReturnValue({

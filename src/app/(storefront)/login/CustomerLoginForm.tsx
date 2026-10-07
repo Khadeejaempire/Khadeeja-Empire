@@ -96,8 +96,21 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   const resetRecaptcha = () => {
     const verifier = recaptchaRef.current;
     recaptchaRef.current = null;
-    verifier?.clear();
-    recaptchaContainerRef.current?.replaceChildren();
+    try {
+      verifier?.clear();
+    } catch (cleanupError) {
+      console.warn("Firebase reCAPTCHA cleanup failed.", {
+        code: firebaseAuthErrorCode(cleanupError) ?? "no-code",
+        errorName: cleanupError instanceof Error ? cleanupError.name : "UnknownError",
+      });
+    }
+    try {
+      recaptchaContainerRef.current?.replaceChildren();
+    } catch (cleanupError) {
+      console.warn("Firebase reCAPTCHA container cleanup failed.", {
+        errorName: cleanupError instanceof Error ? cleanupError.name : "UnknownError",
+      });
+    }
   };
 
   const getRecaptchaVerifier = async (): Promise<RecaptchaVerifier> => {

@@ -130,6 +130,21 @@ describe("CustomerLoginForm", () => {
     expect(await screen.findByText("Enter the code sent to your phone")).toBeTruthy();
   });
 
+  it("does not discard a sent phone challenge when reCAPTCHA cleanup fails", async () => {
+    clearRecaptcha.mockImplementationOnce(() => {
+      throw new Error("reCAPTCHA widget already removed");
+    });
+    render(<CustomerLoginForm next="/account/orders" />);
+
+    fireEvent.change(screen.getByPlaceholderText("Enter your email or phone number"), {
+      target: { value: "9876543210" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "SEND LOGIN OTP" }));
+
+    expect(await screen.findByText("Enter the code sent to your phone")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("keeps email OTP requests on the existing Brevo action path", async () => {
     render(<CustomerLoginForm next="/" />);
 
@@ -326,6 +341,8 @@ describe("CustomerLoginForm", () => {
     fireEvent.change(screen.getByPlaceholderText("Enter your email or phone number"), { target: { value: "customer@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "SEND LOGIN OTP" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining("Authentication could not be completed"));
-    expect((screen.getByRole("button", { name: "SEND LOGIN OTP" }) as HTMLButtonElement).disabled).toBe(false);
+    await waitFor(() => {
+      expect((screen.getByRole("button", { name: "SEND LOGIN OTP" }) as HTMLButtonElement).disabled).toBe(false);
+    });
   });
 });
