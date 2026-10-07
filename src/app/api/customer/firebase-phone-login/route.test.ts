@@ -3,20 +3,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { verifyIdToken, getDataProvider } = vi.hoisted(() => ({
+const { verifyIdToken, getDataProvider, getFirebaseAdminAuth } = vi.hoisted(() => ({
   verifyIdToken: vi.fn(),
   getDataProvider: vi.fn(),
+  getFirebaseAdminAuth: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/firebase/server", () => ({
-  getFirebaseAdminAuth: () => ({ verifyIdToken }),
+  getFirebaseAdminAuth,
 }));
 vi.mock("@/lib/data", () => ({ getDataProvider }));
 
 import { POST } from "./route";
 import { verifyCustomerSession } from "@/lib/auth/session";
 import { getCustomerAuthConfig } from "@/lib/auth/config";
+import { FirebaseConfigurationError } from "@/lib/firebase/admin-config";
 
 function request(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost/api/customer/firebase-phone-login", {
@@ -29,6 +31,7 @@ function request(body: Record<string, unknown>): NextRequest {
 describe("Firebase phone login route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getFirebaseAdminAuth.mockReturnValue({ verifyIdToken });
     vi.stubEnv("CUSTOMER_SESSION_SECRET", "test-customer-session-secret");
     verifyIdToken.mockResolvedValue({
       phone_number: "+919876543210",
@@ -38,6 +41,7 @@ describe("Firebase phone login route", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   it("rejects malformed requests before loading Firebase Admin", async () => {
@@ -167,13 +171,61 @@ describe("Firebase phone login route", () => {
   });
 
   it("does not create an orphan customer when session configuration is missing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubEnv("CUSTOMER_SESSION_SECRET", "");
     vi.stubEnv("ADMIN_SESSION_SECRET", "");
     const createCustomer = vi.fn();
     getDataProvider.mockReturnValue({ listCustomers: vi.fn().mockResolvedValue([]), createCustomer });
     const response = await POST(request({ idToken: "valid-token", allowCreate: true, fullName: "Test Customer" }));
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(503);
     expect(createCustomer).not.toHaveBeenCalled();
     expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("reports initialization failures with a safe log reference before database access", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    getFirebaseAdminAuth.mockImplementationOnce(() => {
+      throw new FirebaseConfigurationError("firebase_private_key_invalid");
+    });
+    const response = await POST(request({ idToken: "valid-token", allowCreate: true, fullName: "Test Customer" }));
+    const body = await response.json();
+    expect(response.status).toBe(503);
+    expect(body.reference).toEqual(expect.any(String));
+    expect(body.error).toContain(body.reference);
+    expect(log).toHaveBeenCalledWith("Firebase phone authentication failed.", expect.objectContaining({
+      reference: body.reference, stage: "firebase_initialize", reason: "firebase_private_key_invalid",
+    }));
+    expect(verifyIdToken).not.toHaveBeenCalled();
+    expect(getDataProvider).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it.each(["app/invalid-credential", "auth/insufficient-permission"])(
+    "reports %s as a server problem without exposing credentials",
+    async (code) => {
+      const log = vi.spyOn(console, "error").mockImplementation(() => {});
+      verifyIdToken.mockRejectedValueOnce(Object.assign(new Error("sensitive-upstream-detail"), { code }));
+      const response = await POST(request({ idToken: "valid-token", allowCreate: false }));
+      const body = await response.json();
+      expect(response.status).toBe(503);
+      expect(body.error).toContain("server configuration error");
+      expect(JSON.stringify(body)).not.toContain("sensitive-upstream-detail");
+      expect(JSON.stringify(log.mock.calls)).not.toContain("sensitive-upstream-detail");
+      expect(log).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ stage: "firebase_verify", code }));
+      expect(getDataProvider).not.toHaveBeenCalled();
+      expect(response.headers.get("set-cookie")).toBeNull();
+    }
+  );
+
+  it("identifies customer creation failures without issuing a session", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    getDataProvider.mockReturnValue({
+      listCustomers: vi.fn().mockResolvedValue([]),
+      createCustomer: vi.fn().mockRejectedValue(new Error("database failure")),
+    });
+    const response = await POST(request({ idToken: "valid-token", allowCreate: true, fullName: "Test Customer" }));
+    expect(response.status).toBe(500);
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(log).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ stage: "customer_create" }));
   });
 });

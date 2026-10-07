@@ -7,13 +7,13 @@ import { chromium } from "@playwright/test";
 const phone = "+447700900123";
 const scenarios = [
   {
-    label: "local development",
+    label: "development-mode simulation",
     origin: "http://localhost:3000",
     environment: "development",
     useTestPhoneAuth: true,
   },
   {
-    label: "production",
+    label: "production-mode simulation",
     origin: "https://auth.example.test",
     environment: "production",
     useTestPhoneAuth: false,

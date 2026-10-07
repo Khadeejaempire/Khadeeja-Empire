@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getDataProvider } from "@/lib/data";
 import { getCustomerAuthConfig } from "@/lib/auth/config";
-import { authErrorResponse } from "@/lib/auth/http";
+import { FirebaseConfigurationError } from "@/lib/firebase/admin-config";
 import { findCustomerByPhone } from "@/lib/auth/customer";
 import { normalizePhone } from "@/lib/auth/phone";
 import { ConfigurationError, ConflictError } from "@/lib/admin/errors";
@@ -27,7 +28,10 @@ function firebaseErrorCode(error: unknown): string | null {
   return typeof error.code === "string" ? error.code : null;
 }
 
-function firebasePhoneErrorResponse(error: unknown): Response {
+type PhoneAuthStage = "firebase_load" | "firebase_initialize" | "firebase_verify" |
+  "customer_lookup" | "session_config" | "customer_create" | "session_create";
+
+function firebasePhoneErrorResponse(error: unknown, stage: PhoneAuthStage): Response {
   const code = firebaseErrorCode(error);
   if (
     code === "auth/id-token-expired" ||
@@ -55,15 +59,30 @@ function firebasePhoneErrorResponse(error: unknown): Response {
     );
   }
 
-  if (error instanceof ConfigurationError) return authErrorResponse(error);
-
+  const reference = randomUUID();
+  const credentialFailure = code === "app/invalid-credential" || code === "auth/invalid-credential";
+  const permissionFailure = code === "auth/insufficient-permission" || code === "auth/project-not-found";
+  const configurationFailure = error instanceof ConfigurationError || credentialFailure || permissionFailure;
+  const reason = error instanceof FirebaseConfigurationError ? error.reason
+    : credentialFailure ? "firebase_credentials_rejected"
+    : permissionFailure ? "firebase_permissions_rejected"
+    : error instanceof ConfigurationError ? "server_configuration_missing"
+    : "phone_authentication_failed";
   console.error("Firebase phone authentication failed.", {
+    reference,
+    stage,
+    reason,
     code,
     errorName: error instanceof Error ? error.name : "UnknownError",
   });
   return NextResponse.json(
-    { error: "Could not complete phone authentication. Please try again." },
-    { status: 500 }
+    {
+      error: configurationFailure
+        ? `Phone sign-in is unavailable because of a server configuration error. Please contact support. Reference: ${reference}`
+        : `Could not complete phone authentication. Please contact support with reference: ${reference}`,
+      reference,
+    },
+    { status: configurationFailure ? 503 : 500, headers: { "Cache-Control": "no-store" } }
   );
 }
 
@@ -80,11 +99,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "The verification request is invalid." }, { status: 400 });
   }
 
+  let stage: PhoneAuthStage = "firebase_load";
   try {
     // Keep the Node-only Admin SDK out of route module initialization. If the
     // deployment runtime is misconfigured, the handler can still return JSON.
     const { getFirebaseAdminAuth } = await import("@/lib/firebase/server");
-    const decoded = await getFirebaseAdminAuth().verifyIdToken(parsed.data.idToken, true);
+    stage = "firebase_initialize";
+    const auth = getFirebaseAdminAuth();
+    stage = "firebase_verify";
+    const decoded = await auth.verifyIdToken(parsed.data.idToken, true);
     if (!decoded.phone_number) {
       return NextResponse.json({ error: "Firebase did not return a phone number." }, { status: 401 });
     }
@@ -96,6 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     const phone = normalizePhone(decoded.phone_number);
+    stage = "customer_lookup";
     const provider = getDataProvider();
     const existing = await findCustomerByPhone(provider, phone);
     if (existing?.status === "inactive") {
@@ -124,13 +148,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session configuration before creating a customer that cannot be signed in.
+    stage = "session_config";
     const config = getCustomerAuthConfig();
+    stage = "customer_create";
     const customer = existing ?? await provider.createCustomer({
       name: parsed.data.fullName!,
       phone,
       status: "active",
     });
     const now = Date.now();
+    stage = "session_create";
     const token = await signCustomerSession({ customerId: customer.id, phone }, config, now);
     const response = NextResponse.json({
       ok: true,
@@ -144,6 +171,6 @@ export async function POST(request: NextRequest) {
     );
     return response;
   } catch (error) {
-    return firebasePhoneErrorResponse(error);
+    return firebasePhoneErrorResponse(error, stage);
   }
 }
