@@ -1,64 +1,102 @@
 // @vitest-environment node
 
-import { generateKeyPairSync } from "node:crypto";
-import { deleteApp, getApps } from "firebase-admin/app";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { generateKeyPair, createLocalJWKSet, exportJWK, SignJWT, type JWK } from "jose";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { FirebaseConfigurationError } from "./admin-config";
 
 vi.mock("server-only", () => ({}));
-
-import { getFirebaseAdminAuth } from "./server";
-
-// Exercise the real Admin SDK with a temporary key, without contacting Firebase.
-const { privateKey } = generateKeyPairSync("rsa", {
-  modulusLength: 2048,
-  privateKeyEncoding: { type: "pkcs8", format: "pem" },
-  publicKeyEncoding: { type: "spki", format: "pem" },
+vi.mock("jose", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("jose")>();
+  return { ...actual, createRemoteJWKSet: vi.fn() };
 });
 
-describe("Firebase Admin credential loading", () => {
-  beforeEach(() => {
-    vi.stubEnv("FIREBASE_PROJECT_ID", "test-project");
-    vi.stubEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", "test-project");
-    vi.stubEnv("FIREBASE_CLIENT_EMAIL", "test@test-project.iam.gserviceaccount.com");
-    vi.stubEnv("FIREBASE_PRIVATE_KEY", privateKey);
+import * as jose from "jose";
+import { getFirebaseAdminAuth } from "./server";
+
+const PROJECT_ID = "test-project";
+let privateKey: CryptoKey;
+let otherPrivateKey: CryptoKey;
+
+function sign(
+  claims: Record<string, unknown>,
+  options: { key?: CryptoKey; issuer?: string; audience?: string; expiresIn?: string } = {}
+) {
+  return new SignJWT({
+    auth_time: Math.floor(Date.now() / 1_000) - 5,
+    phone_number: "+919876543210",
+    firebase: { sign_in_provider: "phone" },
+    ...claims,
+  })
+    .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+    .setSubject("firebase-uid")
+    .setIssuedAt()
+    .setIssuer(options.issuer ?? `https://securetoken.google.com/${PROJECT_ID}`)
+    .setAudience(options.audience ?? PROJECT_ID)
+    .setExpirationTime(options.expiresIn ?? "1h")
+    .sign(options.key ?? privateKey);
+}
+
+describe("Firebase ID token verification", () => {
+  beforeAll(async () => {
+    const pair = await generateKeyPair("RS256");
+    privateKey = pair.privateKey;
+    otherPrivateKey = (await generateKeyPair("RS256")).privateKey;
+    const publicJwk: JWK = { ...(await exportJWK(pair.publicKey)), kid: "test-key", alg: "RS256" };
+    vi.mocked(jose.createRemoteJWKSet).mockReturnValue(
+      createLocalJWKSet({ keys: [publicJwk] }) as unknown as ReturnType<typeof jose.createRemoteJWKSet>
+    );
   });
 
-  afterEach(async () => {
-    await Promise.all(getApps().map((app) => deleteApp(app)));
+  beforeEach(() => {
+    vi.stubEnv("FIREBASE_PROJECT_ID", PROJECT_ID);
+    vi.stubEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", PROJECT_ID);
+  });
+
+  afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it.each([
-    ["PEM", privateKey],
-    ["escaped newlines", privateKey.replace(/\n/g, "\\n")],
-    ["JSON string", JSON.stringify(privateKey)],
-    ["quoted multiline", `'${privateKey}'`],
-    ["double-escaped newlines", privateKey.replace(/\n/g, "\\\\n")],
-    ["Windows newlines", privateKey.replace(/\n/g, "\r\n")],
-  ])("loads %s credentials and rejects an invalid token without a server error", async (_, value) => {
-    vi.stubEnv("FIREBASE_PRIVATE_KEY", `  ${value}  `);
-    const auth = getFirebaseAdminAuth();
-    expect(getFirebaseAdminAuth()).toBe(auth);
-    await expect(auth.verifyIdToken("invalid-diagnostic-token", true)).rejects.toMatchObject({
-      code: "auth/argument-error",
+  it("returns the phone number and sign-in provider for a valid token", async () => {
+    const decoded = await getFirebaseAdminAuth().verifyIdToken(await sign({}));
+    expect(decoded).toEqual({
+      uid: "firebase-uid",
+      phone_number: "+919876543210",
+      firebase: { sign_in_provider: "phone" },
     });
   });
 
-  it("normalizes dashboard whitespace and quotes on the project and service-account email", () => {
-    vi.stubEnv("FIREBASE_PROJECT_ID", ' "test-project" ');
-    vi.stubEnv("FIREBASE_CLIENT_EMAIL", ' "test@test-project.iam.gserviceaccount.com" ');
-    expect(getFirebaseAdminAuth()).toBeDefined();
+  it("normalizes dashboard whitespace and quotes on the project id", async () => {
+    vi.stubEnv("FIREBASE_PROJECT_ID", ` "${PROJECT_ID}" `);
+    await expect(getFirebaseAdminAuth().verifyIdToken(await sign({}))).resolves.toBeDefined();
+  });
+
+  it("reports an expired token", async () => {
+    const token = await sign({}, { expiresIn: "-1m" });
+    await expect(getFirebaseAdminAuth().verifyIdToken(token)).rejects.toMatchObject({
+      code: "auth/id-token-expired",
+    });
   });
 
   it.each([
-    ["FIREBASE_PRIVATE_KEY", "", "firebase_credentials_missing"],
-    ["FIREBASE_PRIVATE_KEY", "invalid-private-key", "firebase_private_key_invalid"],
-    ["FIREBASE_PROJECT_ID", "different-project", "firebase_project_mismatch"],
-  ])("rejects invalid %s configuration before initializing an app", (name, value, reason) => {
-    vi.stubEnv(name, value);
+    ["garbage", () => Promise.resolve("invalid-diagnostic-token")],
+    ["a token signed by another key", () => sign({}, { key: otherPrivateKey })],
+    ["a token for another project", () => sign({}, { audience: "other-project" })],
+    ["a token from another issuer", () => sign({}, { issuer: "https://securetoken.google.com/other" })],
+    ["a token without auth_time", () => sign({ auth_time: undefined })],
+    ["a token without a sign-in provider", () => sign({ firebase: {} })],
+  ])("rejects %s as an invalid token", async (_, makeToken) => {
+    await expect(getFirebaseAdminAuth().verifyIdToken(await makeToken())).rejects.toMatchObject({
+      code: "auth/invalid-id-token",
+    });
+  });
+
+  it.each([
+    ["FIREBASE_PROJECT_ID", "", "NEXT_PUBLIC_FIREBASE_PROJECT_ID", "", "firebase_project_id_missing"],
+    ["FIREBASE_PROJECT_ID", "different-project", "NEXT_PUBLIC_FIREBASE_PROJECT_ID", PROJECT_ID, "firebase_project_mismatch"],
+  ])("rejects invalid project configuration (%s=%s)", (nameA, valueA, nameB, valueB, reason) => {
+    vi.stubEnv(nameA, valueA);
+    vi.stubEnv(nameB, valueB);
     expect(getFirebaseAdminAuth).toThrow(FirebaseConfigurationError);
     expect(getFirebaseAdminAuth).toThrow(expect.objectContaining({ reason }));
-    expect(getApps()).toHaveLength(0);
   });
 });

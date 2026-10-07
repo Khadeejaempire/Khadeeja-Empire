@@ -72,7 +72,7 @@ describe("Firebase phone login route", () => {
     expect(await verifyCustomerSession(token, getCustomerAuthConfig())).toMatchObject({
       customerId: "customer-existing", phone: "+919876543210", role: "customer",
     });
-    expect(verifyIdToken).toHaveBeenCalledWith("valid-token", true);
+    expect(verifyIdToken).toHaveBeenCalledWith("valid-token");
     expect(createCustomer).not.toHaveBeenCalled();
   });
 
@@ -185,7 +185,7 @@ describe("Firebase phone login route", () => {
   it("reports initialization failures with a safe log reference before database access", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     getFirebaseAdminAuth.mockImplementationOnce(() => {
-      throw new FirebaseConfigurationError("firebase_private_key_invalid");
+      throw new FirebaseConfigurationError("firebase_project_mismatch");
     });
     const response = await POST(request({ idToken: "valid-token", allowCreate: true, fullName: "Test Customer" }));
     const body = await response.json();
@@ -193,7 +193,7 @@ describe("Firebase phone login route", () => {
     expect(body.reference).toEqual(expect.any(String));
     expect(body.error).toContain(body.reference);
     expect(log).toHaveBeenCalledWith("Firebase phone authentication failed.", expect.objectContaining({
-      reference: body.reference, stage: "firebase_initialize", reason: "firebase_private_key_invalid",
+      reference: body.reference, stage: "firebase_initialize", reason: "firebase_project_mismatch",
     }));
     expect(verifyIdToken).not.toHaveBeenCalled();
     expect(getDataProvider).not.toHaveBeenCalled();

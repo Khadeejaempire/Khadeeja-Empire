@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     stage = "firebase_initialize";
     const auth = getFirebaseAdminAuth();
     stage = "firebase_verify";
-    const decoded = await auth.verifyIdToken(parsed.data.idToken, true);
+    const decoded = await auth.verifyIdToken(parsed.data.idToken);
     if (!decoded.phone_number) {
       return NextResponse.json({ error: "Firebase did not return a phone number." }, { status: 401 });
     }
