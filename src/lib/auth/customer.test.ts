@@ -58,4 +58,13 @@ describe("current customer", () => {
 
     await expect(getCurrentCustomer()).resolves.toMatchObject({ id: "customer-email" });
   });
+
+  it("does not fall through to a different email identity when a phone cookie is invalid", async () => {
+    cookieGet.mockReturnValue({ value: "invalid-phone-session" });
+    getUser.mockResolvedValue({ data: { user: { email: "other@example.com" } } });
+    getDataProvider.mockReturnValue({ getCustomer: vi.fn(), listCustomers: vi.fn() });
+
+    await expect(getCurrentCustomer()).resolves.toBeNull();
+    expect(getUser).not.toHaveBeenCalled();
+  });
 });

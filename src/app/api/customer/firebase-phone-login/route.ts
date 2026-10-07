@@ -17,7 +17,7 @@ import { safeRedirectPath } from "@/lib/auth/redirect";
 export const runtime = "nodejs";
 
 const requestSchema = z.object({
-  idToken: z.string().min(1),
+  idToken: z.string().min(1).max(16_384),
   next: z.string().optional(),
   fullName: z.string().trim().min(1).max(120).optional(),
   allowCreate: z.boolean().default(false),
@@ -39,6 +39,13 @@ function firebasePhoneErrorResponse(error: unknown): Response {
     return NextResponse.json(
       { error: "Your phone verification expired. Request a new code and try again." },
       { status: 401 }
+    );
+  }
+
+  if (code === "auth/user-disabled") {
+    return NextResponse.json(
+      { error: "This phone account has been disabled. Please contact support." },
+      { status: 403 }
     );
   }
 
@@ -75,9 +82,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const decoded = await getFirebaseAdminAuth().verifyIdToken(parsed.data.idToken);
+    const decoded = await getFirebaseAdminAuth().verifyIdToken(parsed.data.idToken, true);
     if (!decoded.phone_number) {
       return NextResponse.json({ error: "Firebase did not return a phone number." }, { status: 401 });
+    }
+    if (decoded.firebase.sign_in_provider !== "phone") {
+      return NextResponse.json(
+        { error: "Complete phone verification before signing in." },
+        { status: 401 }
+      );
     }
 
     const phone = normalizePhone(decoded.phone_number);
@@ -108,12 +121,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate session configuration before creating a customer that cannot be signed in.
+    const config = getCustomerAuthConfig();
     const customer = existing ?? await provider.createCustomer({
       name: parsed.data.fullName!,
       phone,
       status: "active",
     });
-    const config = getCustomerAuthConfig();
     const now = Date.now();
     const token = await signCustomerSession({ customerId: customer.id, phone }, config, now);
     const response = NextResponse.json({

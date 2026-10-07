@@ -34,6 +34,10 @@ export async function getCurrentCustomer(): Promise<CustomerRecord | null> {
         return customer;
       }
     }
+
+    // A present phone-session cookie is authoritative. Never fall through to
+    // a potentially stale Supabase email session for a different customer.
+    return null;
   }
 
   const supabase = await createSupabaseServerClient();

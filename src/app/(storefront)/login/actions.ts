@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { ConflictError } from "@/lib/admin/errors";
@@ -16,11 +17,18 @@ import {
 } from "@/lib/auth/email-otp";
 import { sendBrevoEmail, signupOtpContent, loginOtpContent, passwordResetContent } from "@/lib/brevo/server";
 import { clearCustomerSession } from "@/lib/auth/server";
+import { safeRedirectPath } from "@/lib/auth/redirect";
+
+const verificationCodeSchema = z.string().regex(/^\d{6}$/);
+const signupChallengePayloadSchema = z.object({
+  fullName: z.string().trim().min(1).max(120),
+  phone: z.string().max(40),
+}).strict();
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const nextUrl = (formData.get("next") as string) || "/";
+  const nextUrl = safeRedirectPath(formData.get("next"), "/");
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -64,6 +72,8 @@ export async function login(formData: FormData) {
     }
   }
 
+  // An older phone session must not shadow the newly authenticated email user.
+  await clearCustomerSession();
   revalidatePath("/", "layout");
   redirect(nextUrl);
 }
@@ -117,16 +127,20 @@ async function finalizeSignup(input: {
     password: input.password,
   });
 
+  if (!signInErr) await clearCustomerSession();
   return { signedIn: !signInErr };
 }
 
 export async function requestSignupOtp(formData: FormData) {
   const emailRaw = formData.get("email") as string;
-  const fullName = formData.get("fullName") as string;
+  const fullName = ((formData.get("fullName") as string) || "").trim();
   const phone = (formData.get("phone") as string) || "";
 
   if (!emailRaw || !fullName) {
     return { ok: false as const, error: "All fields are required." };
+  }
+  if (fullName.length > 120) {
+    return { ok: false as const, error: "Full name must be 120 characters or fewer." };
   }
 
   let email: string;
@@ -170,10 +184,13 @@ export async function verifySignupOtp(formData: FormData) {
   const emailRaw = formData.get("email") as string;
   const code = formData.get("code") as string;
   const challengeId = formData.get("challengeId") as string;
-  const nextUrl = (formData.get("next") as string) || "/";
+  const nextUrl = safeRedirectPath(formData.get("next"), "/");
 
   if (!emailRaw || !code || !challengeId) {
     return { error: "Missing verification details." };
+  }
+  if (!verificationCodeSchema.safeParse(code).success) {
+    return { error: "Enter the six-digit verification code." };
   }
 
   let email: string;
@@ -190,12 +207,21 @@ export async function verifySignupOtp(formData: FormData) {
     return { error: "That code is invalid or has expired." };
   }
 
-  const pending = JSON.parse(result.payload) as { fullName: string; phone: string };
+  let pendingPayload: unknown;
+  try {
+    pendingPayload = JSON.parse(result.payload);
+  } catch {
+    return { error: "That verification request is no longer valid. Request a new code." };
+  }
+  const pending = signupChallengePayloadSchema.safeParse(pendingPayload);
+  if (!pending.success) {
+    return { error: "That verification request is no longer valid. Request a new code." };
+  }
   const finalized = await finalizeSignup({
     email,
     password: randomUUID(),
-    fullName: pending.fullName,
-    phone: pending.phone,
+    fullName: pending.data.fullName,
+    phone: pending.data.phone,
   });
 
   if (finalized.error) {
@@ -264,10 +290,13 @@ export async function verifyLoginOtp(formData: FormData) {
   const emailRaw = formData.get("email") as string;
   const code = formData.get("code") as string;
   const challengeId = formData.get("challengeId") as string;
-  const nextUrl = (formData.get("next") as string) || "/";
+  const nextUrl = safeRedirectPath(formData.get("next"), "/");
 
   if (!emailRaw || !code || !challengeId) {
     return { error: "Missing verification details." };
+  }
+  if (!verificationCodeSchema.safeParse(code).success) {
+    return { error: "Enter the six-digit verification code." };
   }
 
   let email: string;
@@ -292,6 +321,9 @@ export async function verifyLoginOtp(formData: FormData) {
   if (error || !auth.user) {
     return { error: "Could not complete login. Please try again." };
   }
+
+  // A prior phone session must not shadow the newly authenticated email customer.
+  await clearCustomerSession();
 
   let customer = (await dataProvider.listCustomers({ search: email })).find(
     (c) => c.email?.toLowerCase() === email

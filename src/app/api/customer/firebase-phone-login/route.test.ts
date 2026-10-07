@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const { verifyIdToken, getDataProvider } = vi.hoisted(() => ({
@@ -15,6 +15,8 @@ vi.mock("@/lib/firebase/server", () => ({
 vi.mock("@/lib/data", () => ({ getDataProvider }));
 
 import { POST } from "./route";
+import { verifyCustomerSession } from "@/lib/auth/session";
+import { getCustomerAuthConfig } from "@/lib/auth/config";
 
 function request(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost/api/customer/firebase-phone-login", {
@@ -28,7 +30,14 @@ describe("Firebase phone login route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("CUSTOMER_SESSION_SECRET", "test-customer-session-secret");
-    verifyIdToken.mockResolvedValue({ phone_number: "+919876543210" });
+    verifyIdToken.mockResolvedValue({
+      phone_number: "+919876543210",
+      firebase: { sign_in_provider: "phone" },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("logs in an existing customer whose stored phone uses the legacy local format", async () => {
@@ -45,6 +54,12 @@ describe("Firebase phone login route", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, redirectTo: "/account/orders" });
     expect(response.headers.get("set-cookie")).toContain("ke_customer_session=");
+    const cookie = response.headers.get("set-cookie")!;
+    const token = cookie.split(";")[0].slice("ke_customer_session=".length);
+    expect(await verifyCustomerSession(token, getCustomerAuthConfig())).toMatchObject({
+      customerId: "customer-existing", phone: "+919876543210", role: "customer",
+    });
+    expect(verifyIdToken).toHaveBeenCalledWith("valid-token", true);
     expect(createCustomer).not.toHaveBeenCalled();
   });
 
@@ -114,5 +129,42 @@ describe("Firebase phone login route", () => {
     expect(await response.json()).toEqual({
       error: "Your phone verification expired. Request a new code and try again.",
     });
+  });
+
+  it("rejects a Firebase token that did not authenticate with a phone code", async () => {
+    verifyIdToken.mockResolvedValue({
+      phone_number: "+919876543210",
+      firebase: { sign_in_provider: "password" },
+    });
+
+    const response = await POST(request({ idToken: "email-token", allowCreate: false }));
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: "Complete phone verification before signing in.",
+    });
+    expect(getDataProvider).not.toHaveBeenCalled();
+  });
+
+  it("returns a clear error for a disabled Firebase phone user", async () => {
+    verifyIdToken.mockRejectedValue({ code: "auth/user-disabled" });
+
+    const response = await POST(request({ idToken: "disabled-token", allowCreate: false }));
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "This phone account has been disabled. Please contact support.",
+    });
+  });
+
+  it("does not create an orphan customer when session configuration is missing", async () => {
+    vi.stubEnv("CUSTOMER_SESSION_SECRET", "");
+    vi.stubEnv("ADMIN_SESSION_SECRET", "");
+    const createCustomer = vi.fn();
+    getDataProvider.mockReturnValue({ listCustomers: vi.fn().mockResolvedValue([]), createCustomer });
+    const response = await POST(request({ idToken: "valid-token", allowCreate: true, fullName: "Test Customer" }));
+    expect(response.status).toBe(500);
+    expect(createCustomer).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 });

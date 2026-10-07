@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, unstable_rethrow } from "next/navigation";
 import { Mail, Phone, User } from "lucide-react";
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult, type User as FirebaseUser } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { normalizePhone } from "@/lib/auth/phone";
 import {
@@ -25,8 +25,6 @@ type Step = "details" | "code";
 type PhoneAuthMode = Exclude<AuthMode, "forgot">;
 type PhoneAccountStatus = "active" | "inactive" | "missing";
 
-const RECAPTCHA_BUTTON_ID = "customer-phone-auth-submit";
-
 class PhoneAccountError extends Error {
   constructor(message: string) {
     super(message);
@@ -45,14 +43,13 @@ function isDigitsOnlyValue(value: string): boolean {
 function isLocalPhoneAuthWithoutTestMode(): boolean {
   const hostname = window.location.hostname;
   const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
-  return isLocalhost && process.env.NEXT_PUBLIC_FIREBASE_USE_TEST_PHONE_AUTH !== "true";
+  return isLocalhost && !(process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_FIREBASE_USE_TEST_PHONE_AUTH === "true");
 }
 
 function reportFirebasePhoneAuthError(error: unknown, phase: FirebasePhoneAuthPhase): void {
   const code = firebaseAuthErrorCode(error) ?? "no-code";
   const errorName = error instanceof Error ? error.name : "UnknownError";
-  const message = error instanceof Error ? error.message : "No error message returned";
-  console.warn(`[Firebase phone ${phase}] ${code} ${errorName}: ${message}`);
+  console.warn("Firebase phone authentication failed.", { phase, code, errorName });
 }
 
 function phoneAuthErrorMessage(error: unknown, phase: FirebasePhoneAuthPhase): string {
@@ -69,8 +66,26 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   const [success, setSuccess] = useState<string | null>(initialSuccess ?? null);
   const router = useRouter();
   const confirmationRef = useRef<ConfirmationResult | null>(null);
-  const idTokenRef = useRef<string | null>(null);
+  const verifiedUserRef = useRef<FirebaseUser | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+  const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
+  const submittingRef = useRef(false);
+
+  const runAuthAction = (action: () => Promise<void>) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    startTransition(async () => {
+      try {
+        await action();
+      } catch (error) {
+        // Preserve Next.js server-action redirects for the Brevo email flow.
+        unstable_rethrow(error);
+        setError("Authentication could not be completed. Check your connection and try again.");
+      } finally {
+        submittingRef.current = false;
+      }
+    });
+  };
 
   // Form states
   const [email, setEmail] = useState("");
@@ -82,16 +97,18 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     const verifier = recaptchaRef.current;
     recaptchaRef.current = null;
     verifier?.clear();
+    recaptchaContainerRef.current?.replaceChildren();
   };
 
   const getRecaptchaVerifier = async (): Promise<RecaptchaVerifier> => {
     if (recaptchaRef.current) return recaptchaRef.current;
 
-    if (!document.getElementById(RECAPTCHA_BUTTON_ID)) {
+    const container = recaptchaContainerRef.current;
+    if (!container) {
       throw new Error("Phone verification is still loading. Refresh the page and try again.");
     }
 
-    const verifier = new RecaptchaVerifier(getFirebaseAuth(), RECAPTCHA_BUTTON_ID, {
+    const verifier = new RecaptchaVerifier(getFirebaseAuth(), container, {
       size: "invisible",
     });
     recaptchaRef.current = verifier;
@@ -112,6 +129,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({ phone }),
       });
     } catch {
@@ -122,13 +140,14 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
       error?: string;
       status?: PhoneAccountStatus;
     };
-    if (!response.ok || !result.status) {
+    if (!response.ok || !["active", "inactive", "missing"].includes(result.status ?? "")) {
       throw new PhoneAccountError(result.error || "Could not check your account. Please try again.");
     }
-    return result.status;
+    return result.status!;
   };
 
   const switchMode = (next: AuthMode) => {
+    if (submittingRef.current) return;
     setMode(next);
     setStep("details");
     setCode("");
@@ -136,7 +155,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     setError(null);
     setSuccess(null);
     confirmationRef.current = null;
-    idTokenRef.current = null;
+    verifiedUserRef.current = null;
     resetRecaptcha();
   };
 
@@ -147,7 +166,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   const requestFirebasePhoneCode = async (value: string, authMode: PhoneAuthMode) => {
     const normalizedPhone = normalizePhone(value);
     confirmationRef.current = null;
-    idTokenRef.current = null;
+    verifiedUserRef.current = null;
 
     const accountStatus = await getPhoneAccountStatus(normalizedPhone);
     if (authMode === "login" && accountStatus === "missing") {
@@ -172,25 +191,27 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
         await getRecaptchaVerifier()
       );
       confirmationRef.current = confirmation;
+      setCode("");
       setStep("code");
-    } catch (requestError) {
+    } finally {
       resetRecaptcha();
-      throw requestError;
     }
   };
 
   const handleBackToDetails = () => {
+    if (submittingRef.current) return;
     setStep("details");
     setCode("");
     setChallengeId(null);
     setError(null);
     setSuccess(null);
     confirmationRef.current = null;
-    idTokenRef.current = null;
+    verifiedUserRef.current = null;
     resetRecaptcha();
   };
 
   const handleResend = () => {
+    if (submittingRef.current) return;
     setError(null);
     setSuccess(null);
 
@@ -198,7 +219,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     formData.append("email", email);
     if (next) formData.append("next", next);
 
-    startTransition(async () => {
+    runAuthAction(async () => {
       if ((mode === "login" || mode === "signup") && isPhoneValue(email)) {
         try {
           await requestFirebasePhoneCode(email, mode);
@@ -230,8 +251,24 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError(null);
     setSuccess(null);
+    if (mode === "signup" && step === "details") {
+      const normalizedName = fullName.trim();
+      if (!normalizedName) {
+        setError("Enter your full name.");
+        return;
+      }
+      if (normalizedName.length > 120) {
+        setError("Full name must be 120 characters or fewer.");
+        return;
+      }
+    }
+    if (step === "code" && !/^\d{6}$/.test(code)) {
+      setError("Enter the six-digit verification code.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("email", email);
@@ -242,7 +279,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
       formData.append("challengeId", challengeId || "");
     }
 
-    startTransition(async () => {
+    runAuthAction(async () => {
       if (
         (mode === "login" && isPhoneValue(email)) ||
         (mode === "signup" && isPhoneValue(email))
@@ -257,8 +294,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           return;
         }
 
-        let idToken = idTokenRef.current;
-        if (!idToken) {
+        if (!verifiedUserRef.current) {
           if (!confirmationRef.current) {
             setError("Your verification session expired. Request a new code.");
             setStep("details");
@@ -272,19 +308,27 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
 
           try {
             const credential = await confirmationRef.current.confirm(code);
-            idToken = await credential.user.getIdToken(true);
-            idTokenRef.current = idToken;
+            verifiedUserRef.current = credential.user;
           } catch (err) {
             reportFirebasePhoneAuthError(err, "verify");
             if (!canRetryFirebaseVerification(err)) {
               resetRecaptcha();
               confirmationRef.current = null;
-              idTokenRef.current = null;
+              verifiedUserRef.current = null;
               setStep("details");
             }
             setError(firebasePhoneAuthErrorMessage(err, "verify"));
             return;
           }
+        }
+
+        let idToken: string;
+        try {
+          idToken = await verifiedUserRef.current!.getIdToken(true);
+        } catch (error) {
+          reportFirebasePhoneAuthError(error, "verify");
+          setError("Your phone was verified, but sign-in could not be completed. Try again.");
+          return;
         }
 
         let response: Response;
@@ -293,6 +337,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             method: "POST",
             credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(30_000),
             body: JSON.stringify({
               idToken,
               next,
@@ -311,6 +356,12 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           redirectTo?: string;
         };
         if (!response.ok || !result.ok) {
+          if (response.status === 401) {
+            verifiedUserRef.current = null;
+            confirmationRef.current = null;
+            setStep("details");
+            setCode("");
+          }
           setError(result.error || "Could not sign you in. Please try again.");
           return;
         }
@@ -371,6 +422,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           <div className="flex w-full rounded-none border border-border p-1 mb-8">
             <button
               type="button"
+              disabled={isPending}
               onClick={() => switchMode("login")}
               className={`h-11 flex-1 text-sm font-semibold tracking-widest transition-colors ${
                 mode === "login" ? "bg-[#2d2520] text-white" : "text-ink hover:bg-[#f5eee4]"
@@ -380,6 +432,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             </button>
             <button
               type="button"
+              disabled={isPending}
               onClick={() => switchMode("signup")}
               className={`h-11 flex-1 text-sm font-semibold tracking-widest transition-colors ${
                 mode === "signup" ? "bg-[#2d2520] text-white" : "text-ink hover:bg-[#f5eee4]"
@@ -410,7 +463,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mb-3">
+        <form onSubmit={handleSubmit} aria-busy={isPending} className="space-y-5 mb-3">
 
           {/* Full Name (Signup only) */}
           {showNameAndPhone && (
@@ -421,6 +474,8 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
                 <input
                   type="text"
                   value={fullName}
+                  disabled={isPending}
+                  maxLength={120}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
                   className="w-full h-12 pl-12 pr-4 bg-white border border-border rounded-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-ink placeholder:text-muted/60"
@@ -451,6 +506,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
                 <input
                   type="text"
                   value={email}
+                  disabled={isPending}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email or phone number"
                   className="w-full h-12 pl-12 pr-4 bg-white border border-border rounded-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-ink placeholder:text-muted/60"
@@ -477,14 +533,16 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
                 pattern="[0-9]*"
                 maxLength={6}
                 value={code}
+                disabled={isPending}
+                autoComplete="one-time-code"
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="6-digit code"
                 className="w-full h-12 px-4 text-center text-lg tracking-[0.4em] bg-white border border-border rounded-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-ink placeholder:text-muted/60"
                 required
               />
               <div className="flex items-center justify-between pt-1 text-sm">
-                <button type="button" onClick={handleBackToDetails} className="text-[#a46e38] hover:underline">
-                  {mode === "signup" ? "Edit details" : "Change email"}
+                <button type="button" disabled={isPending} onClick={handleBackToDetails} className="text-[#a46e38] hover:underline">
+                  {mode === "signup" ? "Edit details" : isPhoneValue(email) ? "Change phone" : "Change email"}
                 </button>
                 <button
                   type="button"
@@ -507,10 +565,9 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             </div>
           )}
           {/* Submit Button */}
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm text-center">{success}</p>}
+          {error && <p role="alert" className="text-red-500 text-sm text-center">{error}</p>}
+          {success && <p role="status" className="text-green-500 text-sm text-center">{success}</p>}
           <button
-            id={RECAPTCHA_BUTTON_ID}
             type="submit"
             disabled={isPending}
             className="w-full h-12 bg-[#2d2520] hover:bg-primary text-white font-semibold tracking-widest text-sm rounded-none transition-colors mt-1 uppercase disabled:opacity-50 disabled:cursor-not-allowed"
@@ -527,6 +584,8 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           </button>
 
         </form>
+        {/* Firebase executes this widget programmatically; it must never own submit clicks. */}
+        <div ref={recaptchaContainerRef} />
       </section>
     </main>
   );

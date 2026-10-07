@@ -11,6 +11,7 @@ const {
   deleteUserMock,
   getDataProviderMock,
   verifyEmailOtpChallengeMock,
+  clearCustomerSessionMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn(() => {
     throw new Error("REDIRECT");
@@ -22,6 +23,7 @@ const {
   deleteUserMock: vi.fn(),
   getDataProviderMock: vi.fn(),
   verifyEmailOtpChallengeMock: vi.fn(),
+  clearCustomerSessionMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -38,6 +40,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
   })),
 }));
 vi.mock("@/lib/data", () => ({ getDataProvider: getDataProviderMock }));
+vi.mock("@/lib/auth/server", () => ({ clearCustomerSession: clearCustomerSessionMock }));
 vi.mock("@/lib/brevo/server", () => ({
   sendBrevoEmail: vi.fn(),
   signupOtpContent: vi.fn(() => ({ subject: "", html: "", text: "" })),
@@ -89,6 +92,7 @@ describe("storefront auth actions", () => {
         status: "active",
       })
     );
+    expect(clearCustomerSessionMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not create a profile when the customer already exists", async () => {
@@ -113,7 +117,7 @@ describe("storefront auth actions", () => {
     });
     verifyEmailOtpChallengeMock.mockResolvedValue({
       ok: true,
-      payload: JSON.stringify({ password: "secret", fullName: "X", phone: "9999999999" }),
+      payload: JSON.stringify({ fullName: "X", phone: "9999999999" }),
     });
 
     const result = await verifySignupOtp(
