@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ConfigurationError } from "@/lib/admin/errors";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentCustomer } from "@/lib/auth/customer";
 import {
   cloudinaryUploadRequestSchema,
   getCloudinaryServerConfig,
@@ -11,12 +11,7 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) {
+  if (!(await getCurrentCustomer())) {
     return NextResponse.json({ error: "Please log in to upload media." }, { status: 401 });
   }
 

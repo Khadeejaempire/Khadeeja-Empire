@@ -3,8 +3,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ConflictError } from "../../lib/admin/errors";
-import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { getDataProvider } from "../../lib/data";
+import { getCurrentCustomer } from "../../lib/auth/customer";
 import { createCashfreeOrder } from "@/lib/cashfree/payment";
 import { codOrderConfirmationContent, isBrevoConfigured, sendBrevoEmail } from "@/lib/brevo/server";
 import {
@@ -48,27 +48,21 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutActionRe
     };
   }
 
-  let userEmail: string;
+  let customer;
   try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user?.email) {
+    customer = await getCurrentCustomer();
+    if (!customer) {
       return { ok: false, code: "UNAUTHENTICATED", message: "Sign in to place your order." };
     }
-    userEmail = user.email;
   } catch {
     return { ok: false, code: "PROVIDER", message: "Checkout configuration is unavailable." };
   }
 
   const provider = getDataProvider();
-  const customers = await provider.listCustomers({ search: userEmail });
-  const customer = customers.find((c) => c.email?.toLowerCase() === userEmail.toLowerCase());
-  if (!customer) {
-    return { ok: false, code: "UNAUTHENTICATED", message: "Your customer profile is incomplete. Please contact support." };
-  }
-  if (parsed.data.customer.email !== userEmail.toLowerCase()) {
+  if (
+    customer.email &&
+    parsed.data.customer.email !== customer.email.toLowerCase()
+  ) {
     return { ok: false, code: "UNAUTHENTICATED", message: "Use the email address linked to your signed-in account." };
   }
   const session = { customerId: customer.id, phone: parsed.data.customer.phone };

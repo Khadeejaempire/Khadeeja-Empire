@@ -15,6 +15,7 @@ import {
   OtpRateLimitError,
 } from "@/lib/auth/email-otp";
 import { sendBrevoEmail, signupOtpContent, loginOtpContent, passwordResetContent } from "@/lib/brevo/server";
+import { clearCustomerSession } from "@/lib/auth/server";
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
@@ -318,6 +319,7 @@ export async function verifyLoginOtp(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await clearCustomerSession();
   revalidatePath("/", "layout");
   redirect("/");
 }

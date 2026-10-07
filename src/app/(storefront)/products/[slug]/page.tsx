@@ -19,7 +19,7 @@ import {
 import { getDataProvider } from "@/lib/data";
 import { toStorefrontProduct, attachProductRatings } from "@/lib/storefront/adapters";
 import { formatPrice, discountPercent } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentCustomer } from "@/lib/auth/customer";
 import { ProductReviews } from "@/components/product/ProductReviews";
 
 interface PageProps {
@@ -50,10 +50,10 @@ export default async function ProductPage({ params }: PageProps) {
 
   const product = toStorefrontProduct(record);
   const discount = discountPercent(product.price, product.oldPrice);
-  const [allReviews, productRecords, user] = await Promise.all([
+  const [allReviews, productRecords, customer] = await Promise.all([
     provider.listReviews(),
     provider.listProducts({ active: true }),
-    createClient().then((supabase) => supabase.auth.getUser()).then(({ data }) => data.user),
+    getCurrentCustomer(),
   ]);
   const related = attachProductRatings(
     productRecords
@@ -197,7 +197,7 @@ export default async function ProductPage({ params }: PageProps) {
             productId={record.id}
             productSlug={product.slug}
             reviews={reviews}
-            isLoggedIn={Boolean(user)}
+            isLoggedIn={Boolean(customer)}
           />
         </div>
 

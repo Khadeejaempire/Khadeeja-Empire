@@ -1,10 +1,15 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, User } from "lucide-react";
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { normalizePhone } from "@/lib/auth/phone";
+import {
+  canRetryFirebaseVerification,
+  firebasePhoneAuthErrorMessage,
+} from "@/lib/firebase/errors";
 import {
   requestSignupOtp,
   verifySignupOtp,
@@ -14,41 +19,28 @@ import {
 } from "./actions";
 
 type AuthMode = "login" | "signup" | "forgot";
-type LoginMethod = "emailOtp" | "phoneOtp";
 type Step = "details" | "code";
+
+function isPhoneValue(value: string): boolean {
+  return /^[+]?\d[\d\s()\-]{6,}$/.test(value.trim());
+}
 
 export function CustomerLoginForm({ next, initialSuccess }: { next: string; initialSuccess?: string }) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>("emailOtp");
   const [step, setStep] = useState<Step>("details");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(initialSuccess ?? null);
   const router = useRouter();
   const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const idTokenRef = useRef<string | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
   // Form states
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
-
-  const switchMode = (next: AuthMode) => {
-    setMode(next);
-    setLoginMethod("emailOtp");
-    setStep("details");
-    setCode("");
-    setChallengeId(null);
-    setError(null);
-    setSuccess(null);
-  };
-
-  const normalizeFirebasePhone = (value: string) => {
-    const compact = value.trim().replace(/[\s()\-]/g, "");
-    return compact.startsWith("+") ? compact : `+91${compact}`;
-  };
 
   const getRecaptchaVerifier = () => {
     if (!recaptchaRef.current) {
@@ -64,20 +56,40 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     recaptchaRef.current = null;
   };
 
-  const requestFirebasePhoneCode = async (value = phone) => {
-    const normalizedPhone = normalizeFirebasePhone(value);
-    if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
-      setError("Enter a valid phone number.");
-      return;
-    }
+  const switchMode = (next: AuthMode) => {
+    setMode(next);
+    setStep("details");
+    setCode("");
+    setChallengeId(null);
+    setError(null);
+    setSuccess(null);
+    confirmationRef.current = null;
+    idTokenRef.current = null;
+    resetRecaptcha();
+  };
 
-    const confirmation = await signInWithPhoneNumber(
-      getFirebaseAuth(),
-      normalizedPhone,
-      getRecaptchaVerifier()
-    );
-    confirmationRef.current = confirmation;
-    setStep("code");
+  useEffect(() => () => {
+    recaptchaRef.current?.clear();
+    recaptchaRef.current = null;
+  }, []);
+
+  const requestFirebasePhoneCode = async (value: string) => {
+    const normalizedPhone = normalizePhone(value);
+    confirmationRef.current = null;
+    idTokenRef.current = null;
+
+    try {
+      const confirmation = await signInWithPhoneNumber(
+        getFirebaseAuth(),
+        normalizedPhone,
+        getRecaptchaVerifier()
+      );
+      confirmationRef.current = confirmation;
+      setStep("code");
+    } catch (requestError) {
+      resetRecaptcha();
+      throw requestError;
+    }
   };
 
   const handleBackToDetails = () => {
@@ -86,6 +98,8 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     setChallengeId(null);
     setError(null);
     setSuccess(null);
+    confirmationRef.current = null;
+    idTokenRef.current = null;
     resetRecaptcha();
   };
 
@@ -98,23 +112,15 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     if (next) formData.append("next", next);
 
     startTransition(async () => {
-      if (mode === "login" && loginMethod === "phoneOtp") {
-        try {
-          await requestFirebasePhoneCode();
-          setSuccess("A new code has been sent.");
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Could not send a new code. Please try again.");
-        }
-      } else if (mode === "signup" && isPhoneValue(email)) {
+      if ((mode === "login" || mode === "signup") && isPhoneValue(email)) {
         try {
           await requestFirebasePhoneCode(email);
           setSuccess("A new code has been sent.");
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Could not send a new code. Please try again.");
+          setError(firebasePhoneAuthErrorMessage(err, "send"));
         }
       } else if (mode === "signup") {
         formData.append("fullName", fullName);
-        formData.append("phone", phone);
         const res = await requestSignupOtp(formData);
         if (!res.ok) {
           setError(res.error);
@@ -122,14 +128,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           setChallengeId(res.challengeId);
           setSuccess("A new code has been sent.");
         }
-      } else if (mode === "login" && isPhoneValue(email)) {
-        try {
-          await requestFirebasePhoneCode(email);
-          setSuccess("A new code has been sent.");
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Could not send a new code. Please try again.");
-        }
-      } else if (mode === "login" && loginMethod === "emailOtp") {
+      } else if (mode === "login") {
         const res = await requestLoginOtp(formData);
         if (!res.ok) {
           setError(res.error);
@@ -149,7 +148,6 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     const formData = new FormData();
     formData.append("email", email);
     if (fullName) formData.append("fullName", fullName);
-    if (phone) formData.append("phone", phone);
     if (next) formData.append("next", next);
     if (step === "code") {
       formData.append("code", code);
@@ -158,15 +156,20 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
 
     startTransition(async () => {
       if (
-        (mode === "login" && (loginMethod === "phoneOtp" || isPhoneValue(email))) ||
+        (mode === "login" && isPhoneValue(email)) ||
         (mode === "signup" && isPhoneValue(email))
       ) {
-        try {
-          if (step === "details") {
+        if (step === "details") {
+          try {
             await requestFirebasePhoneCode(email);
-            return;
+          } catch (err) {
+            setError(firebasePhoneAuthErrorMessage(err, "send"));
           }
+          return;
+        }
 
+        let idToken = idTokenRef.current;
+        if (!idToken) {
           if (!confirmationRef.current) {
             setError("Your verification session expired. Request a new code.");
             setStep("details");
@@ -178,10 +181,27 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             return;
           }
 
-          const credential = await confirmationRef.current.confirm(code);
-          const idToken = await credential.user.getIdToken();
-          const response = await fetch("/api/customer/firebase-phone-login", {
+          try {
+            const credential = await confirmationRef.current.confirm(code);
+            idToken = await credential.user.getIdToken(true);
+            idTokenRef.current = idToken;
+          } catch (err) {
+            if (!canRetryFirebaseVerification(err)) {
+              resetRecaptcha();
+              confirmationRef.current = null;
+              idTokenRef.current = null;
+              setStep("details");
+            }
+            setError(firebasePhoneAuthErrorMessage(err, "verify"));
+            return;
+          }
+        }
+
+        let response: Response;
+        try {
+          response = await fetch("/api/customer/firebase-phone-login", {
             method: "POST",
+            credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               idToken,
@@ -190,22 +210,26 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
               allowCreate: mode === "signup",
             }),
           });
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok || !result.ok) {
-            setError(result.error || "Could not sign you in. Please try again.");
-            return;
-          }
-          router.push(result.redirectTo || "/");
-        } catch (err) {
-          resetRecaptcha();
-          confirmationRef.current = null;
-          setStep("details");
-          setError(err instanceof Error ? err.message : "Could not verify the code. Please try again.");
+        } catch {
+          setError("Your phone was verified, but the sign-in service could not be reached. Try again.");
+          return;
         }
+
+        const result = await response.json().catch(() => ({})) as {
+          ok?: boolean;
+          error?: string;
+          redirectTo?: string;
+        };
+        if (!response.ok || !result.ok) {
+          setError(result.error || "Could not sign you in. Please try again.");
+          return;
+        }
+        router.replace(result.redirectTo || "/");
+        router.refresh();
         return;
       }
 
-      if (mode === "login" && loginMethod === "emailOtp") {
+      if (mode === "login") {
         if (step === "details") {
           const res = await requestLoginOtp(formData);
           if (!res.ok) {
@@ -246,9 +270,8 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   };
 
   const showNameAndPhone = mode === "signup" && step === "details";
-  const showEmailInput = step === "details" && !(mode === "login" && loginMethod === "phoneOtp");
+  const showEmailInput = step === "details";
   const showCodeInput = step === "code";
-  const isPhoneValue = (value: string) => /^[+]?\d[\d\s()\-]{6,}$/.test(value.trim());
 
   return (
     <main className="flex min-h-[75vh] items-center justify-center px-4 py-10 sm:px-6">

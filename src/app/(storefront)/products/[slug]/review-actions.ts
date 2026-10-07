@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createClient } from "@/lib/supabase/server";
 import { getDataProvider } from "@/lib/data";
+import { getCurrentCustomer } from "@/lib/auth/customer";
 import { reviewMutationSchema } from "@/lib/admin/schemas";
 import {
   createCloudinaryUploadSignature,
@@ -17,12 +17,8 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 export async function uploadReviewMediaAction(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) {
+  const customer = await getCurrentCustomer();
+  if (!customer) {
     return { error: "Please log in to upload photos or videos." };
   }
 
@@ -111,12 +107,8 @@ export async function uploadReviewMediaAction(formData: FormData) {
 }
 
 export async function submitReview(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) {
+  const customer = await getCurrentCustomer();
+  if (!customer) {
     return { error: "Please log in to write a review." };
   }
 
@@ -133,18 +125,13 @@ export async function submitReview(formData: FormData) {
   }
 
   const dataProvider = getDataProvider();
-  const customers = await dataProvider.listCustomers({ search: user.email });
-  const customer = customers.find((c) => c.email === user.email);
-
-  const fullName =
-    (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) || "";
-  const authorName = customer?.name || fullName || user.email.split("@")[0];
+  const authorName = customer.name || customer.email?.split("@")[0] || "Customer";
 
   const parsed = reviewMutationSchema.safeParse({
     productId,
-    customerId: customer?.id ?? null,
+    customerId: customer.id,
     authorName,
-    authorEmail: user.email,
+    authorEmail: customer.email ?? null,
     rating,
     title: title || null,
     body,

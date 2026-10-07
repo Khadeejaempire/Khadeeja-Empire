@@ -2,8 +2,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUserMock, getDataProviderMock, createCashfreeOrderMock, sendBrevoEmailMock, isBrevoConfiguredMock } = vi.hoisted(() => ({
-  getUserMock: vi.fn(),
+const { getCurrentCustomerMock, getDataProviderMock, createCashfreeOrderMock, sendBrevoEmailMock, isBrevoConfiguredMock } = vi.hoisted(() => ({
+  getCurrentCustomerMock: vi.fn(),
   getDataProviderMock: vi.fn(),
   createCashfreeOrderMock: vi.fn(() => ({ paymentSessionId: "session-test", environment: "sandbox" })),
   sendBrevoEmailMock: vi.fn(() => Promise.resolve()),
@@ -11,9 +11,7 @@ const { getUserMock, getDataProviderMock, createCashfreeOrderMock, sendBrevoEmai
 }));
 
 vi.mock("server-only", () => ({}));
-vi.mock("../../lib/supabase/server", () => ({
-  createSupabaseServerClient: vi.fn(async () => ({ auth: { getUser: getUserMock } })),
-}));
+vi.mock("../../lib/auth/customer", () => ({ getCurrentCustomer: getCurrentCustomerMock }));
 vi.mock("../../lib/data", () => ({ getDataProvider: getDataProviderMock }));
 vi.mock("@/lib/cashfree/payment", () => ({ createCashfreeOrder: createCashfreeOrderMock }));
 vi.mock("@/lib/brevo/server", () => ({
@@ -48,11 +46,11 @@ const input = {
 describe("placeOrder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getUserMock.mockResolvedValue({ data: { user: { email: "demo@example.com" } } });
+    getCurrentCustomerMock.mockResolvedValue(loggedInCustomer);
   });
 
   it("requires a signed-in customer", async () => {
-    getUserMock.mockResolvedValue({ data: { user: null } });
+    getCurrentCustomerMock.mockResolvedValue(null);
 
     await expect(placeOrder(input)).resolves.toMatchObject({
       ok: false,

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { JsonValue } from "../admin/types";
 import type { DataProvider } from "../data/provider";
+export { normalizePhone } from "./phone";
 
 export const OTP_TTL_MS = 5 * 60 * 1000;
 export const OTP_COOLDOWN_MS = 60 * 1000;
@@ -58,14 +59,6 @@ export class OtpRateLimitError extends Error {
     this.retryAfterMs = retryAfterMs;
     Object.setPrototypeOf(this, new.target.prototype);
   }
-}
-
-export function normalizePhone(value: string): string {
-  const normalized = value.trim().replace(/[\s()\-]/g, "");
-  if (!/^\+?[1-9]\d{6,14}$/.test(normalized)) {
-    throw new Error("Enter a valid phone number.");
-  }
-  return normalized;
 }
 
 export function hashPhone(phone: string): string {
