@@ -17,10 +17,15 @@ describe("Firebase phone auth errors", () => {
     expect(firebasePhoneAuthErrorMessage(error, "verify")).toContain("expired");
   });
 
-  it("does not expose raw Firebase internal errors", () => {
+  it("extracts Firebase codes from Error messages and returns an actionable error", () => {
     const error = new Error("Firebase: Error (auth/internal-error).");
     expect(firebasePhoneAuthErrorMessage(error, "verify")).toBe(
-      "Could not verify the code. Please try again."
+      "Firebase could not complete phone verification. Refresh the page and try again. If it continues, contact support with code auth/internal-error."
     );
+  });
+
+  it("preserves an unknown Firebase error code for support", () => {
+    const error = { code: "auth/example-failure" };
+    expect(firebasePhoneAuthErrorMessage(error, "send")).toContain("auth/example-failure");
   });
 });

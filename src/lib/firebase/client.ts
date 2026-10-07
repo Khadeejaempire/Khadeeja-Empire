@@ -17,5 +17,12 @@ function getFirebaseApp() {
 }
 
 export function getFirebaseAuth() {
-  return getAuth(getFirebaseApp());
+  const auth = getAuth(getFirebaseApp());
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_FIREBASE_USE_TEST_PHONE_AUTH === "true"
+  ) {
+    auth.settings.appVerificationDisabledForTesting = true;
+  }
+  return auth;
 }

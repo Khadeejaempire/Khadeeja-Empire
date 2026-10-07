@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, User } from "lucide-react";
+import { Mail, Phone, User } from "lucide-react";
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { normalizePhone } from "@/lib/auth/phone";
 import {
   canRetryFirebaseVerification,
+  firebaseAuthErrorCode,
   firebasePhoneAuthErrorMessage,
+  type FirebasePhoneAuthPhase,
 } from "@/lib/firebase/errors";
 import {
   requestSignupOtp,
@@ -20,9 +22,43 @@ import {
 
 type AuthMode = "login" | "signup" | "forgot";
 type Step = "details" | "code";
+type PhoneAuthMode = Exclude<AuthMode, "forgot">;
+type PhoneAccountStatus = "active" | "inactive" | "missing";
+
+const RECAPTCHA_BUTTON_ID = "customer-phone-auth-submit";
+
+class PhoneAccountError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PhoneAccountError";
+  }
+}
 
 function isPhoneValue(value: string): boolean {
   return /^[+]?\d[\d\s()\-]{6,}$/.test(value.trim());
+}
+
+function isDigitsOnlyValue(value: string): boolean {
+  return /^\d+$/.test(value.trim());
+}
+
+function isLocalPhoneAuthWithoutTestMode(): boolean {
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+  return isLocalhost && process.env.NEXT_PUBLIC_FIREBASE_USE_TEST_PHONE_AUTH !== "true";
+}
+
+function reportFirebasePhoneAuthError(error: unknown, phase: FirebasePhoneAuthPhase): void {
+  const code = firebaseAuthErrorCode(error) ?? "no-code";
+  const errorName = error instanceof Error ? error.name : "UnknownError";
+  const message = error instanceof Error ? error.message : "No error message returned";
+  console.warn(`[Firebase phone ${phase}] ${code} ${errorName}: ${message}`);
+}
+
+function phoneAuthErrorMessage(error: unknown, phase: FirebasePhoneAuthPhase): string {
+  return error instanceof PhoneAccountError
+    ? error.message
+    : firebasePhoneAuthErrorMessage(error, phase);
 }
 
 export function CustomerLoginForm({ next, initialSuccess }: { next: string; initialSuccess?: string }) {
@@ -42,18 +78,54 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   const [code, setCode] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
 
-  const getRecaptchaVerifier = () => {
-    if (!recaptchaRef.current) {
-      recaptchaRef.current = new RecaptchaVerifier(getFirebaseAuth(), "firebase-recaptcha", {
-        size: "invisible",
-      });
-    }
-    return recaptchaRef.current;
+  const resetRecaptcha = () => {
+    const verifier = recaptchaRef.current;
+    recaptchaRef.current = null;
+    verifier?.clear();
   };
 
-  const resetRecaptcha = () => {
-    recaptchaRef.current?.clear();
-    recaptchaRef.current = null;
+  const getRecaptchaVerifier = async (): Promise<RecaptchaVerifier> => {
+    if (recaptchaRef.current) return recaptchaRef.current;
+
+    if (!document.getElementById(RECAPTCHA_BUTTON_ID)) {
+      throw new Error("Phone verification is still loading. Refresh the page and try again.");
+    }
+
+    const verifier = new RecaptchaVerifier(getFirebaseAuth(), RECAPTCHA_BUTTON_ID, {
+      size: "invisible",
+    });
+    recaptchaRef.current = verifier;
+
+    try {
+      await verifier.render();
+      return verifier;
+    } catch (error) {
+      resetRecaptcha();
+      throw error;
+    }
+  };
+
+  const getPhoneAccountStatus = async (phone: string): Promise<PhoneAccountStatus> => {
+    let response: Response;
+    try {
+      response = await fetch("/api/customer/phone-status", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+    } catch {
+      throw new PhoneAccountError("Could not check your account. Check your connection and try again.");
+    }
+
+    const result = await response.json().catch(() => ({})) as {
+      error?: string;
+      status?: PhoneAccountStatus;
+    };
+    if (!response.ok || !result.status) {
+      throw new PhoneAccountError(result.error || "Could not check your account. Please try again.");
+    }
+    return result.status;
   };
 
   const switchMode = (next: AuthMode) => {
@@ -69,20 +141,35 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
   };
 
   useEffect(() => () => {
-    recaptchaRef.current?.clear();
-    recaptchaRef.current = null;
+    resetRecaptcha();
   }, []);
 
-  const requestFirebasePhoneCode = async (value: string) => {
+  const requestFirebasePhoneCode = async (value: string, authMode: PhoneAuthMode) => {
     const normalizedPhone = normalizePhone(value);
     confirmationRef.current = null;
     idTokenRef.current = null;
+
+    const accountStatus = await getPhoneAccountStatus(normalizedPhone);
+    if (authMode === "login" && accountStatus === "missing") {
+      throw new PhoneAccountError("User doesn't exist. Register first.");
+    }
+    if (accountStatus === "inactive") {
+      throw new PhoneAccountError("Your account is pending admin approval.");
+    }
+    if (authMode === "signup" && accountStatus === "active") {
+      throw new PhoneAccountError("An account with this phone number already exists. Please log in.");
+    }
+    if (isLocalPhoneAuthWithoutTestMode()) {
+      throw new PhoneAccountError(
+        "Real Firebase phone OTP cannot run on localhost. Use a configured Firebase test phone number or test on the production domain."
+      );
+    }
 
     try {
       const confirmation = await signInWithPhoneNumber(
         getFirebaseAuth(),
         normalizedPhone,
-        getRecaptchaVerifier()
+        await getRecaptchaVerifier()
       );
       confirmationRef.current = confirmation;
       setStep("code");
@@ -114,10 +201,11 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
     startTransition(async () => {
       if ((mode === "login" || mode === "signup") && isPhoneValue(email)) {
         try {
-          await requestFirebasePhoneCode(email);
+          await requestFirebasePhoneCode(email, mode);
           setSuccess("A new code has been sent.");
         } catch (err) {
-          setError(firebasePhoneAuthErrorMessage(err, "send"));
+          if (!(err instanceof PhoneAccountError)) reportFirebasePhoneAuthError(err, "send");
+          setError(phoneAuthErrorMessage(err, "send"));
         }
       } else if (mode === "signup") {
         formData.append("fullName", fullName);
@@ -161,9 +249,10 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
       ) {
         if (step === "details") {
           try {
-            await requestFirebasePhoneCode(email);
+            await requestFirebasePhoneCode(email, mode);
           } catch (err) {
-            setError(firebasePhoneAuthErrorMessage(err, "send"));
+            if (!(err instanceof PhoneAccountError)) reportFirebasePhoneAuthError(err, "send");
+            setError(phoneAuthErrorMessage(err, "send"));
           }
           return;
         }
@@ -186,6 +275,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             idToken = await credential.user.getIdToken(true);
             idTokenRef.current = idToken;
           } catch (err) {
+            reportFirebasePhoneAuthError(err, "verify");
             if (!canRetryFirebaseVerification(err)) {
               resetRecaptcha();
               confirmationRef.current = null;
@@ -345,7 +435,19 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-ink">Phone Number/Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted h-5 w-5 stroke-[1.5]" />
+                {isDigitsOnlyValue(email) ? (
+                  <Phone
+                    aria-hidden="true"
+                    data-testid="phone-input-icon"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted h-5 w-5 stroke-[1.5]"
+                  />
+                ) : (
+                  <Mail
+                    aria-hidden="true"
+                    data-testid="email-input-icon"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted h-5 w-5 stroke-[1.5]"
+                  />
+                )}
                 <input
                   type="text"
                   value={email}
@@ -408,6 +510,7 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           {success && <p className="text-green-500 text-sm text-center">{success}</p>}
           <button
+            id={RECAPTCHA_BUTTON_ID}
             type="submit"
             disabled={isPending}
             className="w-full h-12 bg-[#2d2520] hover:bg-primary text-white font-semibold tracking-widest text-sm rounded-none transition-colors mt-1 uppercase disabled:opacity-50 disabled:cursor-not-allowed"
@@ -424,8 +527,6 @@ export function CustomerLoginForm({ next, initialSuccess }: { next: string; init
           </button>
 
         </form>
-        <div id="firebase-recaptcha" />
-
       </section>
     </main>
   );
