@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Our Story",
-  description: "The story of Khadeeja Empire — authentic Banarasi handloom sarees, handwoven in Banaras.",
+  description: "Discover Khadeeja Empire's celebration of Banarasi handloom sarees, master artisans, pure fabrics, and generations-old weaving traditions.",
 };
 
 export default function AboutPage() {
@@ -16,7 +16,7 @@ export default function AboutPage() {
       <section className="relative w-full h-[45vh] min-h-[380px] md:h-[55vh] md:min-h-[450px] overflow-hidden">
         <Image
           src="/assets/images/3912472252555175961.jpg"
-          alt="Khadeeja Empire Banarasi handloom saree craftsmanship"
+          alt="The timeless artistry of a Banarasi handloom saree"
           fill
           sizes="100vw"
           className="object-cover object-[center]"
@@ -33,12 +33,12 @@ export default function AboutPage() {
             </div>
 
             <h1 className="text-[40px] sm:text-5xl md:text-6xl lg:text-7xl font-display font-medium leading-[1.1] mb-6">
-              Woven in Banaras.<br />
-              Draped with <span className="text-[#d8b88d] italic font-serif">Pride.</span>
+              Born in Banaras.<br />
+              Woven into <span className="text-[#d8b88d] italic font-serif">Legacy.</span>
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-white/90 font-light mb-8">
-              Handloom silk sarees, handwoven thread by thread — a craft passed down through generations.
+              Every thread carries the patience of an artisan, the memory of a city, and a tradition cherished for generations.
             </p>
 
             <div className="flex items-center gap-3">
@@ -58,13 +58,13 @@ export default function AboutPage() {
             {/* Left Content */}
             <div className="flex flex-col max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-[#d8b88d] mb-4">
-                KHADEEJA EMPIRE
+                THE KHADEEJA EMPIRE STORY
               </span>
 
               <h2 className="text-3xl sm:text-4xl md:text-[44px] leading-[1.2] md:leading-[1.15] font-display font-bold text-ink mb-6">
-                Rooted in the handlooms<br className="hidden sm:block" />
-                of Banaras. Woven for<br className="hidden sm:block" />
-                the way women drape today.
+                A living legacy of Banaras.<br className="hidden sm:block" />
+                Woven by hand.<br className="hidden sm:block" />
+                Treasured for generations.
               </h2>
 
               <div className="flex items-center justify-center lg:justify-start gap-3 mb-8">
@@ -75,19 +75,21 @@ export default function AboutPage() {
 
               <div className="flex flex-col gap-6 text-[14px] md:text-[15px] text-muted leading-[1.8]">
                 <p>
-                  Khadeeja Empire brings you authentic Banarasi handloom sarees, handwoven by
-                  master weavers in the heart of Banaras. Every saree carries a legacy of
-                  craftsmanship passed down through generations of artisans.
+                  In the storied lanes of Banaras, the steady rhythm of the handloom has echoed
+                  for centuries. Here, skilled local artisans transform fine yarns into sarees of
+                  remarkable beauty, preserving knowledge passed from one generation to the next.
                 </p>
                 <p>
-                  From pure silk and tissue handloom to dupion silk weaves, each saree is adorned
-                  with intricate gold zari work, traditional buttis, and heritage-inspired borders
-                  — woven on the loom, never printed.
+                  Khadeeja Empire honours this living tradition through authentic Banarasi sarees
+                  woven in pure silk, luminous tissue, and rich dupion. Intricate zari, delicate
+                  butis, graceful jaals, and time-honoured floral motifs emerge slowly on the loom,
+                  guided by practiced hands and an artist's eye.
                 </p>
                 <p>
-                  We believe a handloom saree is more than fabric — it is a story of patience,
-                  skill, and heritage. Every drape from Khadeeja Empire is a tribute to the
-                  timeless art of Banarasi weaving.
+                  No two handwoven sarees are ever quite the same. Each bears the subtle character
+                  of its maker and the many hours devoted to its creation. Made to be worn, loved,
+                  and handed down, every Khadeeja Empire saree is our tribute to Banaras and its
+                  enduring culture of craftsmanship.
                 </p>
               </div>
             </div>
@@ -98,7 +100,7 @@ export default function AboutPage() {
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-full rounded-b-xl border-[6px] border-white shadow-xl bg-surface">
                 <Image
                   src="/assets/images/3931104797681236517.jpg" // Using an elegant existing image
-                  alt="Banarasi handloom saree weaving details"
+                  alt="Intricate zari and traditional motifs on a Banarasi handloom saree"
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
@@ -109,7 +111,7 @@ export default function AboutPage() {
               <div className="absolute top-1/4 -right-4 sm:-right-10 w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#fdfaf5] border border-[#d8b88d]/30 shadow-xl flex flex-col items-center justify-center p-4 text-center z-10 hidden sm:flex">
                 <Flower2 className="w-6 h-6 text-[#d8b88d] mb-2 md:mb-3" strokeWidth={1.5} />
                 <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-[0.2em] text-ink leading-loose">
-                  HANDLOOM<br />WOVEN<br /><br />BANARASI<br />HERITAGE
+                  HANDWOVEN<br />IN BANARAS<br /><br />A LIVING<br />LEGACY
                 </span>
               </div>
             </div>
@@ -127,8 +129,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">01</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Pure Handloom Silk</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Authentic Banarasi silk, handwoven on traditional looms.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Pure, Fine Fabrics</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Carefully chosen silks, handwoven for lustre, richness, and graceful drape.</p>
                 </div>
               </div>
 
@@ -139,8 +141,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">02</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Zari Craftsmanship</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Intricate gold zari work, woven with hand-tied precision.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Intricate Zari Artistry</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Lustrous zari and heritage motifs brought to life by master weavers.</p>
                 </div>
               </div>
 
@@ -151,8 +153,8 @@ export default function AboutPage() {
                 </div>
                 <div className="flex flex-col items-center lg:items-start">
                   <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">03</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Timeless Drape</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Every saree, an heirloom for today and generations to come.</p>
+                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Generations of Craft</h4>
+                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Centuries-old skill preserved in every timeless, heirloom-worthy drape.</p>
                 </div>
               </div>
 

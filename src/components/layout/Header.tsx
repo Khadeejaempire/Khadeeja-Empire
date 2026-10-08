@@ -102,7 +102,7 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
           TIER 2: MAIN HEADER ROW (Brand Logo + Search Bar + Actions)
           ────────────────────────────────────────────────────────────── */}
       <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 relative z-40">
-        <div className="flex items-center justify-between gap-4 lg:gap-8 py-1.5 lg:py-2">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 lg:gap-8 py-1.5 lg:py-2">
           {/* Mobile hamburger menu toggle */}
           <div className="flex items-center lg:hidden">
             <button
@@ -118,7 +118,7 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
           {/* Brand Logo */}
           <Link
             href="/"
-            className="flex items-center shrink-0 transition-transform duration-300 hover:scale-105"
+            className="flex items-center shrink-0 mr-auto sm:mr-0 transition-transform duration-300 hover:scale-105"
             aria-label={`${siteConfig.name} home`}
           >
             <BrandLogo variant="navbar" className="w-[56px] h-[56px] sm:w-[68px] sm:h-[68px] lg:w-[80px] lg:h-[80px]" />
