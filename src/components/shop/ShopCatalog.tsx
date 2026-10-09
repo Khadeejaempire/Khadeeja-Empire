@@ -58,7 +58,7 @@ interface ShopCatalogProps {
   filterSettings?: ShopFilterSettings;
 }
 
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"];
 const DEFAULT_COLOR_SWATCHES = [
   { name: "Beige", bg: "#D4B376" },
   { name: "Black", bg: "#1A1A1A" },

@@ -1,178 +1,240 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Container } from "@/components/ui/Container";
-import { ArrowRight, Flower2 } from "lucide-react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Flower2,
+  Gem,
+  HeartHandshake,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
   title: "Our Story",
-  description: "Discover Khadeeja Empire's celebration of Banarasi handloom sarees, master artisans, pure fabrics, and generations-old weaving traditions.",
+  description:
+    "Discover Khadeeja Empire's celebration of Indian handloom, thoughtfully curated traditional textiles, and timeless craftsmanship.",
 };
+
+type PromiseItem = {
+  title: string;
+  description: string;
+  Icon: LucideIcon;
+};
+
+const promises: PromiseItem[] = [
+  {
+    title: "Authenticity First",
+    description:
+      "Honest product representation, with clear descriptions and considered imagery so you can shop with confidence.",
+    Icon: BadgeCheck,
+  },
+  {
+    title: "Quality You Can Feel",
+    description:
+      "Every piece is selected with close attention to its fabric, texture, design, drape, and overall appeal.",
+    Icon: Gem,
+  },
+  {
+    title: "Tradition Meets Elegance",
+    description:
+      "From timeless weaves to refined styles for modern wardrobes, our collection keeps Indian craft at its heart.",
+    Icon: Sparkles,
+  },
+  {
+    title: "Your Trust Matters",
+    description:
+      "We aim to make every step, from discovering a piece to receiving it, transparent, comfortable, and reliable.",
+    Icon: HeartHandshake,
+  },
+];
 
 export default function AboutPage() {
   return (
-    <div className="bg-[#fcfaf7] min-h-screen pb-16 md:pb-24">
-      {/* Hero Section */}
-      <section className="relative w-full h-[45vh] min-h-[380px] md:h-[55vh] md:min-h-[450px] overflow-hidden">
+    <main className="min-h-screen bg-[#fcfaf7] pb-16 md:pb-24">
+      <section className="relative h-[52vh] min-h-[460px] w-full overflow-hidden md:h-[62vh] md:min-h-[560px]">
         <Image
-          src="/assets/images/3912472252555175961.jpg"
-          alt="The timeless artistry of a Banarasi handloom saree"
+          src="/assets/images/Vibrant Traditional Handloom Workshop.png"
+          alt="A traditional handloom workshop with vibrant threads prepared for weaving"
           fill
           sizes="100vw"
-          className="object-cover object-[center]"
+          className="object-cover object-[center_58%]"
           priority
         />
-        {/* Dark Gradient Overlay for text readability on left side */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#26150f]/95 via-[#26150f]/65 to-[#26150f]/10" />
 
-        <Container className="relative h-full flex flex-col justify-center">
-          <div className="max-w-2xl text-white">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-[2px] bg-[#d8b88d]" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d8b88d]">OUR STORY</span>
+        <Container className="relative flex h-full items-center">
+          <div className="max-w-3xl text-white">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="h-px w-9 bg-[#d8b88d]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#e6c79e]">
+                Our Story
+              </span>
             </div>
 
-            <h1 className="text-[40px] sm:text-5xl md:text-6xl lg:text-7xl font-display font-medium leading-[1.1] mb-6">
-              Born in Banaras.<br />
-              Woven into <span className="text-[#d8b88d] italic font-serif">Legacy.</span>
+            <h1 className="mb-6 font-display text-[42px] font-medium leading-[1.08] sm:text-5xl md:text-6xl lg:text-7xl">
+              Woven with Tradition.
+              <br />
+              <span className="font-serif italic text-[#e6c79e]">Made with Love.</span>
             </h1>
 
-            <p className="text-base sm:text-lg md:text-xl text-white/90 font-light mb-8">
-              Every thread carries the patience of an artisan, the memory of a city, and a tradition cherished for generations.
+            <p className="max-w-2xl text-base font-light leading-relaxed text-white/90 sm:text-lg md:text-xl">
+              Every fabric has a story to tell, and every weave carries a piece of India’s rich
+              heritage.
             </p>
 
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-[1px] bg-[#d8b88d]/50" />
-              <Flower2 className="w-5 h-5 text-[#d8b88d]" />
-              <div className="w-16 h-[1px] bg-[#d8b88d]/50" />
+            <div className="mt-8 flex items-center gap-3" aria-hidden="true">
+              <div className="h-px w-16 bg-[#d8b88d]/60" />
+              <Flower2 className="h-5 w-5 text-[#e6c79e]" strokeWidth={1.5} />
+              <div className="h-px w-16 bg-[#d8b88d]/60" />
             </div>
           </div>
         </Container>
       </section>
 
-      {/* Main Content Section */}
-      <section className="pt-12 md:pt-20 relative z-10">
+      <section className="py-14 md:py-24">
         <Container>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-7xl mx-auto">
-
-            {/* Left Content */}
-            <div className="flex flex-col max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] text-[#d8b88d] mb-4">
-                THE KHADEEJA EMPIRE STORY
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
+            <div className="mx-auto flex max-w-2xl flex-col text-center lg:mx-0 lg:text-left">
+              <span className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#a27b53] sm:text-[11px]">
+                The Khadeeja Empire Journey
               </span>
 
-              <h2 className="text-3xl sm:text-4xl md:text-[44px] leading-[1.2] md:leading-[1.15] font-display font-bold text-ink mb-6">
-                A living legacy of Banaras.<br className="hidden sm:block" />
-                Woven by hand.<br className="hidden sm:block" />
-                Treasured for generations.
+              <h2 className="mb-6 font-display text-3xl font-bold leading-[1.18] text-ink sm:text-4xl md:text-[46px]">
+                A story told in
+                <br className="hidden sm:block" /> every beautiful weave.
               </h2>
 
-              <div className="flex items-center justify-center lg:justify-start gap-3 mb-8">
-                <div className="w-12 h-[1px] bg-[#d8b88d]/40" />
-                <Flower2 className="w-5 h-5 text-[#d8b88d]" />
-                <div className="w-12 h-[1px] bg-[#d8b88d]/40" />
+              <div className="mb-8 flex items-center justify-center gap-3 lg:justify-start" aria-hidden="true">
+                <div className="h-px w-12 bg-[#d8b88d]/50" />
+                <Flower2 className="h-5 w-5 text-[#c39a68]" strokeWidth={1.5} />
+                <div className="h-px w-12 bg-[#d8b88d]/50" />
               </div>
 
-              <div className="flex flex-col gap-6 text-[14px] md:text-[15px] text-muted leading-[1.8]">
+              <div className="flex flex-col gap-6 text-[14px] leading-[1.9] text-muted md:text-[15px]">
                 <p>
-                  In the storied lanes of Banaras, the steady rhythm of the handloom has echoed
-                  for centuries. Here, skilled local artisans transform fine yarns into sarees of
-                  remarkable beauty, preserving knowledge passed from one generation to the next.
+                  At Khadeeja Empire, our journey is inspired by the timeless beauty of Indian
+                  handloom, the elegance of traditional craftsmanship, and a passion for bringing
+                  meaningful fabrics closer to you.
                 </p>
                 <p>
-                  Khadeeja Empire honours this living tradition through authentic Banarasi sarees
-                  woven in pure silk, luminous tissue, and rich dupion. Intricate zari, delicate
-                  butis, graceful jaals, and time-honoured floral motifs emerge slowly on the loom,
-                  guided by practiced hands and an artist's eye.
+                  Rooted in the cultural richness of Banaras, we celebrate the patient hands,
+                  practiced skill, and creative spirit behind India’s weaving traditions. Each
+                  textile is chosen not only for how it looks, but for the heritage and human touch
+                  it carries.
                 </p>
                 <p>
-                  No two handwoven sarees are ever quite the same. Each bears the subtle character
-                  of its maker and the many hours devoted to its creation. Made to be worn, loved,
-                  and handed down, every Khadeeja Empire saree is our tribute to Banaras and its
-                  enduring culture of craftsmanship.
+                  Our thoughtfully curated collection brings together pure handloom sarees,
+                  elegant suit fabrics, and premium traditional textiles—pieces made to bring grace
+                  to everyday moments and meaning to special occasions.
                 </p>
               </div>
             </div>
 
-            {/* Right Image (Arch) */}
-            <div className="relative w-full max-w-[450px] mx-auto lg:ml-auto">
-              {/* Arch Image Container */}
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-full rounded-b-xl border-[6px] border-white shadow-xl bg-surface">
+            <div className="relative mx-auto w-full max-w-[520px] lg:ml-auto">
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-full rounded-b-2xl border-[6px] border-white bg-surface shadow-xl">
                 <Image
-                  src="/assets/images/3931104797681236517.jpg" // Using an elegant existing image
-                  alt="Intricate zari and traditional motifs on a Banarasi handloom saree"
+                  src="/assets/images/Golden Threads on a Traditional Handloom.png"
+                  alt="Golden and magenta threads being woven on a traditional wooden handloom"
                   fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 45vw"
+                  className="object-cover object-center"
                 />
               </div>
 
-              {/* Floating Circular Badge */}
-              <div className="absolute top-1/4 -right-4 sm:-right-10 w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#fdfaf5] border border-[#d8b88d]/30 shadow-xl flex flex-col items-center justify-center p-4 text-center z-10 hidden sm:flex">
-                <Flower2 className="w-6 h-6 text-[#d8b88d] mb-2 md:mb-3" strokeWidth={1.5} />
-                <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-[0.2em] text-ink leading-loose">
-                  HANDWOVEN<br />IN BANARAS<br /><br />A LIVING<br />LEGACY
+              <div className="absolute -bottom-7 -left-3 hidden h-36 w-36 flex-col items-center justify-center rounded-full border border-[#d8b88d]/40 bg-[#fdfaf5] p-5 text-center shadow-xl sm:flex md:-left-10 md:h-40 md:w-40">
+                <Flower2 className="mb-3 h-6 w-6 text-[#b98d5d]" strokeWidth={1.5} />
+                <span className="text-[8px] font-bold uppercase leading-loose tracking-[0.2em] text-ink">
+                  Rooted in Craft
+                  <br />
+                  Chosen with Care
+                  <br />
+                  Made Meaningful
                 </span>
               </div>
             </div>
-
-          </div>
-
-          {/* Features Box Below */}
-          <div className="mt-12 md:mt-16 bg-white rounded-xl md:rounded-2xl shadow-sm py-5 px-4 md:py-6 md:px-8 w-full max-w-7xl xl:max-w-[1360px] mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 md:gap-8 divide-y sm:divide-y-0 sm:divide-x divide-[#d8b88d]/20 py-6">
-
-              {/* Feature 1 */}
-              <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-4 sm:pt-0 sm:px-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4l-2 5l1.5 1.5L6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2l-.5-8.5L19 9l-2-5H7z" /><path d="M9 11h6" /></svg>
-                </div>
-                <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">01</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Pure, Fine Fabrics</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Carefully chosen silks, handwoven for lustre, richness, and graceful drape.</p>
-                </div>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-10 sm:pt-0 sm:px-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 9.5L9.5 14.5" /><path d="M12 2l4 4l-9 9l-4-4l9-9z" /><circle cx="16" cy="18" r="3" /></svg>
-                </div>
-                <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">02</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Intricate Zari Artistry</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Lustrous zari and heritage motifs brought to life by master weavers.</p>
-                </div>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="flex flex-col sm:flex-col lg:flex-row items-center text-center lg:text-left gap-4 lg:gap-6 pt-10 sm:pt-0 sm:px-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-full bg-[#fcfaf7] border border-[#d8b88d]/30 flex items-center justify-center text-[#d8b88d]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v-3a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2c0 .8.5 1.5 1.2 1.8" /><path d="M12 10l-9 6.5A1 1 0 0 0 3.5 18h17a1 1 0 0 0 .5-1.5L12 10z" /></svg>
-                </div>
-                <div className="flex flex-col items-center lg:items-start">
-                  <span className="text-[#d8b88d] font-display text-lg md:text-xl font-bold italic mb-0.5 block">03</span>
-                  <h4 className="font-display font-bold text-ink text-[16px] md:text-[18px] mb-1.5 leading-tight">Generations of Craft</h4>
-                  <p className="text-[12px] md:text-[13px] text-muted leading-relaxed">Centuries-old skill preserved in every timeless, heirloom-worthy drape.</p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Explore Button */}
-          <div className="mt-12 text-center pb-8">
-            <Link
-              href="/shop"
-              className="inline-flex items-center gap-3 px-8 md:px-10 py-3.5 md:py-4 rounded bg-[#a27b53] text-white text-[12px] md:text-[13px] font-bold uppercase tracking-[0.15em] hover:bg-[#8e6844] transition-all shadow-md hover:shadow-lg active:scale-95 group"
-            >
-              Explore Our Collections
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Link>
           </div>
         </Container>
       </section>
-    </div>
+
+      <section className="bg-[#f5eee5] py-16 md:py-24">
+        <Container>
+          <div className="mx-auto mb-10 max-w-2xl text-center md:mb-14">
+            <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.24em] text-[#a27b53] sm:text-[11px]">
+              Our Promise to You
+            </span>
+            <h2 className="font-display text-3xl font-bold text-ink sm:text-4xl md:text-[44px]">
+              Chosen with care. Shared with honesty.
+            </h2>
+          </div>
+
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {promises.map(({ title, description, Icon }, index) => (
+              <article
+                key={title}
+                className="group rounded-2xl border border-[#d8b88d]/20 bg-white p-7 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md md:p-8"
+              >
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-[#d8b88d]/30 bg-[#fcfaf7] text-[#a27b53] transition-colors group-hover:bg-[#a27b53] group-hover:text-white">
+                  <Icon className="h-7 w-7" strokeWidth={1.5} />
+                </div>
+                <span className="mb-2 block font-display text-lg font-bold italic text-[#c39a68]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mb-3 font-display text-xl font-bold text-ink">{title}</h3>
+                <p className="text-[13px] leading-relaxed text-muted md:text-[14px]">{description}</p>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-14 md:py-24">
+        <Container>
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl bg-[#342019] px-6 py-14 text-center text-white shadow-xl sm:px-10 md:py-20">
+            <div
+              className="absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at center, #e6c79e 1px, transparent 1px)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+
+            <div className="relative mx-auto max-w-3xl">
+              <Flower2 className="mx-auto mb-6 h-8 w-8 text-[#e6c79e]" strokeWidth={1.25} />
+              <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.24em] text-[#e6c79e] sm:text-[11px]">
+                More Than Fabric, It’s Our Heritage
+              </span>
+              <h2 className="mb-6 font-display text-3xl font-medium leading-tight sm:text-4xl md:text-5xl">
+                Celebrating Indian Handloom,
+                <br />
+                <span className="font-serif italic text-[#e6c79e]">one weave at a time.</span>
+              </h2>
+              <p className="mx-auto mb-5 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+                For us, handloom is more than a product. It represents tradition, creativity,
+                craftsmanship, and the enduring beauty of Indian culture.
+              </p>
+              <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+                Our vision is to help you discover fabrics that make every occasion special and
+                every purchase meaningful. Thank you for being a part of our journey.
+              </p>
+              <p className="mb-8 font-serif text-lg italic text-[#e6c79e]">
+                With love, Team Khadeeja Empire
+              </p>
+
+              <Link
+                href="/shop"
+                className="group inline-flex items-center gap-3 rounded bg-[#b1875e] px-8 py-3.5 text-[12px] font-bold uppercase tracking-[0.15em] text-white shadow-md transition hover:bg-[#c69a6b] hover:shadow-lg active:scale-95 md:px-10 md:py-4 md:text-[13px]"
+              >
+                Explore Our Collections
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+    </main>
   );
 }

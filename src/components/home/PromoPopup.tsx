@@ -100,21 +100,14 @@ export function PromoPopup({ promo }: { promo: PromoSettingsRecord | null }) {
         {/* Left Visual Area - Ambient backdrop + uncropped image */}
         {promo.image ? (
           <div className="relative shrink-0 flex items-center justify-center bg-[#150e0c] overflow-hidden sm:w-[320px] md:w-[360px] min-h-[220px]">
-            {/* Ambient Blurred Background Glow */}
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-30 blur-md scale-110 -z-0"
+              className="absolute inset-0 z-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${promo.image})` }}
               aria-hidden="true"
             />
-            {/* Uncropped crisp image */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={promo.image}
-              alt={promo.title || "Promotional collection"}
-              className="relative z-10 h-full w-full max-h-64 sm:max-h-[480px] object-contain block"
-            />
             {/* Subtle soft edge gradient blending into the card */}
             <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-black/25" />
+            <span className="sr-only">{promo.title || "Promotional collection"}</span>
           </div>
         ) : (
           <div className="hidden bg-gradient-to-b from-amber-600 to-[#7a1f1f] sm:block sm:w-3" aria-hidden="true" />
