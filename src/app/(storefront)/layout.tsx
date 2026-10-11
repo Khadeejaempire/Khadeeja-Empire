@@ -1,3 +1,4 @@
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { StoreShell } from "@/components/layout/StoreShell";
 import { getDataProvider } from "@/lib/data";
 import { toStorefrontCategory, toStorefrontProduct } from "@/lib/storefront/adapters";
@@ -48,14 +49,17 @@ export default async function StorefrontLayout({
   });
 
   return (
-    <StoreShell
-      announcements={announcements}
-      products={searchProducts}
-      categories={categories}
-      discoveryLinks={discoveryLinks}
-      customer={customerSummary}
-    >
-      {children}
-    </StoreShell>
+    <>
+      <MetaPixel />
+      <StoreShell
+        announcements={announcements}
+        products={searchProducts}
+        categories={categories}
+        discoveryLinks={discoveryLinks}
+        customer={customerSummary}
+      >
+        {children}
+      </StoreShell>
+    </>
   );
 }
