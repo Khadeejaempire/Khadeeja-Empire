@@ -428,7 +428,7 @@ export function ReelModal({
           {/* CTA Button anchored to the absolute bottom of the container */}
           <div className="pt-2.5 sm:pt-3 border-t border-ink/10 mt-auto shrink-0 bg-surface">
             <a
-              href="https://www.instagram.com/khadeeja_empireofficial/"
+              href={/^https?:\/\//i.test(post.sourceUrl) ? post.sourceUrl : "https://www.instagram.com/khadeeja_empireofficial/"}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#7A1F1F] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#5f1717] transition-colors shadow-md"
