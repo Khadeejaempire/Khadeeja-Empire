@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Film, Images, Instagram, Play } from "lucide-react";
+import { Film, Instagram, Play } from "lucide-react";
 import { ReelModal } from "@/components/home/VideoStrip";
 import type { InstagramPost } from "@/types";
 import { cn } from "@/lib/utils";
@@ -83,8 +83,8 @@ export function GalleryGrid({ posts }: { posts: InstagramPost[] }) {
 
 function GalleryCard({ post, onOpen }: { post: InstagramPost; onOpen: () => void }) {
   const reel = isReel(post);
-  const BadgeIcon = reel ? Film : post.type === "Sidecar" ? Images : Instagram;
-  const badge = reel ? "Reel" : post.type === "Sidecar" ? "Carousel" : "Photo";
+  const BadgeIcon = reel ? Film : Instagram;
+  const badge = reel ? "Reel" : "Photo";
 
   return (
     <button

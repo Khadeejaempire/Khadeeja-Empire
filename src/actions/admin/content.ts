@@ -57,6 +57,8 @@ async function saveInstagramPostMutation(input: unknown, id?: string) {
       nullable: ["caption", "hashtags", "shortCode", "sourceUrl", "type", "video", "timestamp"],
     }) as Record<string, unknown>;
     const postId = recordId(raw, id);
+    // Media type is derived from the upload rather than asked for.
+    raw.type = raw.video ? "Video" : "Image";
     const value = instagramPostMutationSchema.parse(raw);
     const provider = getDataProvider();
     return postId ? provider.updateInstagramPost(parseId(postId), value) : provider.createInstagramPost(value);
