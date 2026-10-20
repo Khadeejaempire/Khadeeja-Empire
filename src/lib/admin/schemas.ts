@@ -402,6 +402,7 @@ export const instagramPostMutationSchema = z.object({
   video: nullableAsset,
   timestamp: trimmedString.max(80).nullable().optional(),
   active: z.boolean().nullable().optional(),
+  showOnHome: z.boolean().nullable().optional(),
   sortOrder: z.number().int().min(0).nullable().optional(),
 });
 

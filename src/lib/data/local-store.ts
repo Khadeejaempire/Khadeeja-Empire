@@ -324,6 +324,7 @@ const storedInstagramPostSchema = z
     video: storedNullableString,
     timestamp: storedTimestamp,
     active: storedNullableBoolean,
+    showOnHome: storedNullableBoolean,
     sortOrder: storedNullableNumber,
   })
   .passthrough();

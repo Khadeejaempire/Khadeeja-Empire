@@ -459,6 +459,22 @@ export function Header({ discoveryLinks, categories, customer }: HeaderProps) {
               </Link>
             </li>
 
+            {/* Gallery */}
+            <li>
+              <Link
+                href="/gallery"
+                className={cn(
+                  "text-[13px] xl:text-[14px] font-normal transition-colors relative py-1 whitespace-nowrap",
+                  pathname === "/gallery" ? "text-primary font-semibold" : "text-ink/80 hover:text-primary"
+                )}
+              >
+                Gallery
+                {pathname === "/gallery" && (
+                  <span className="absolute bottom-0 left-0 h-[2px] w-full bg-primary" />
+                )}
+              </Link>
+            </li>
+
             {/* 7. Contact Us */}
             <li>
               <Link

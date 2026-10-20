@@ -100,7 +100,7 @@ export default async function HomePage() {
       <CraftStory />
       <ValuesSection />
       <PublicReviews reviews={publicReviews} />
-      <VideoStrip posts={instagramPosts.slice(0, 8).map(toStorefrontInstagramPost)} />
+      <VideoStrip posts={instagramPosts.filter((post) => post.showOnHome !== false).map(toStorefrontInstagramPost)} />
       <HomeFaqs faqs={faqs} />
       <NewsletterSection />
       <PromoPopup promo={promoIsCurrent ? promo : null} />

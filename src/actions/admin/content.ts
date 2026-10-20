@@ -53,26 +53,26 @@ async function reorderHeroSlidesMutation(input: unknown) {
 async function saveInstagramPostMutation(input: unknown, id?: string) {
   return adminMutation(async () => {
     const raw = inputObject(input, {
-      booleans: ["active"], numbers: ["sortOrder"], arrays: ["hashtags"],
+      booleans: ["active", "showOnHome"], numbers: ["sortOrder"], arrays: ["hashtags"],
       nullable: ["caption", "hashtags", "shortCode", "sourceUrl", "type", "video", "timestamp"],
     }) as Record<string, unknown>;
     const postId = recordId(raw, id);
     const value = instagramPostMutationSchema.parse(raw);
     const provider = getDataProvider();
     return postId ? provider.updateInstagramPost(parseId(postId), value) : provider.createInstagramPost(value);
-  }, [...homePaths, "/admin/instagram"]);
+  }, [...homePaths, "/gallery", "/admin/instagram"]);
 }
 
 async function deleteInstagramPostMutation(id: string) {
-  return noData(await adminMutation(async () => getDataProvider().deleteInstagramPost(parseId(id)), [...homePaths, "/admin/instagram"]));
+  return noData(await adminMutation(async () => getDataProvider().deleteInstagramPost(parseId(id)), [...homePaths, "/gallery", "/admin/instagram"]));
 }
 
 async function toggleInstagramPostMutation(id: string, active: boolean) {
-  return adminMutation(async () => getDataProvider().updateInstagramPost(parseId(id), { active }), [...homePaths, "/admin/instagram"]);
+  return adminMutation(async () => getDataProvider().updateInstagramPost(parseId(id), { active }), [...homePaths, "/gallery", "/admin/instagram"]);
 }
 
 async function reorderInstagramPostsMutation(input: unknown) {
-  return adminMutation(async () => getDataProvider().reorderInstagramPosts(reorderInput(input)), [...homePaths, "/admin/instagram"]);
+  return adminMutation(async () => getDataProvider().reorderInstagramPosts(reorderInput(input)), [...homePaths, "/gallery", "/admin/instagram"]);
 }
 
 async function saveTestimonialMutation(input: unknown, id?: string) {
@@ -157,6 +157,7 @@ export async function deleteHeroSlideAction(formData: FormData): Promise<void> {
 
 export async function saveInstagramPostAction(formData: FormData): Promise<void> {
   checkbox(formData, "active");
+  checkbox(formData, "showOnHome");
   await finishFormAction(saveInstagramPostMutation(formData));
 }
 

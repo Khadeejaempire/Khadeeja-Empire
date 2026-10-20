@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { createPortal } from "react-dom";
 import { Container } from "@/components/ui/Container";
 import type { InstagramPost } from "@/types";
 import {
@@ -16,6 +18,7 @@ import {
   ChevronRight,
   Film,
   Sparkles,
+  ArrowRight,
 } from "lucide-react";
 
 export function VideoStrip({ posts }: { posts: InstagramPost[] }) {
@@ -76,6 +79,16 @@ export function VideoStrip({ posts }: { posts: InstagramPost[] }) {
             />
           ))}
         </div>
+
+        <div className="mt-8 sm:mt-10 flex justify-center">
+          <Link
+            href="/gallery"
+            className="group inline-flex items-center gap-2 rounded-full bg-[#7A1F1F] px-6 py-3 text-xs sm:text-sm font-semibold uppercase tracking-[0.16em] text-white! shadow-lg transition hover:bg-[#5c1717] hover:shadow-xl active:scale-95"
+          >
+            View all
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        </div>
       </Container>
 
       {/* Sleek & Compact Reel Lightbox / Modal */}
@@ -92,7 +105,7 @@ export function VideoStrip({ posts }: { posts: InstagramPost[] }) {
   );
 }
 
-function ReelCard({
+export function ReelCard({
   post,
   onOpenModal,
 }: {
@@ -201,7 +214,7 @@ function ReelCard({
   );
 }
 
-function ReelModal({
+export function ReelModal({
   post,
   onClose,
   onNext,
@@ -228,6 +241,14 @@ function ReelModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, onNext, onPrev]);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   const toggleMute = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (modalVideoRef.current) {
@@ -249,12 +270,14 @@ function ReelModal({
     }
   };
 
-  return (
+  // Portal to <body>: an ancestor transform/stacking context was trapping the
+  // overlay beneath the sticky header.
+  return createPortal(
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 md:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 md:p-6 animate-in fade-in duration-200"
     >
       {/* High-visibility Close Button (Top Right of Screen) */}
       <button
@@ -417,7 +440,8 @@ function ReelModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

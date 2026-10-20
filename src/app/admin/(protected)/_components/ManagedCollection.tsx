@@ -1,6 +1,10 @@
 import type { ComponentProps } from "react";
 import { AdminCard, EmptyState, StatusBadge } from "./AdminPage";
 import { MediaUpload } from "@/components/admin/MediaUpload";
+import { ConfirmDeleteButton } from "./ConfirmDeleteButton";
+import { ManagedSaveForm } from "./ManagedSaveForm";
+
+type SaveAction = (formData: FormData) => Promise<void>;
 
 export type ServerFormAction = NonNullable<ComponentProps<"form">["action"]>;
 
@@ -38,7 +42,7 @@ function datetimeLocalValue(record: Record<string, unknown> | undefined, name: s
 
 function Editor({ fields, record }: { fields: ManagedField[]; record?: Record<string, unknown> }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
       {fields.map((field) => {
         const id = `${record?.id || "new"}-${field.name}`;
         const inputClass =
@@ -48,16 +52,21 @@ function Editor({ fields, record }: { fields: ManagedField[]; record?: Record<st
           return (
             <label
               key={field.name}
-              className="mt-6 flex min-h-10 items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-stone-700 cursor-pointer"
+              htmlFor={id}
+              className="group flex min-h-14 cursor-pointer items-center justify-between gap-4 self-end rounded-xl border border-stone-200 bg-stone-50/70 px-4 py-3 text-xs font-bold uppercase tracking-wider text-stone-700 transition hover:border-[#9c5247]/50 hover:bg-[#fbf5f3]/70 has-checked:border-[#9c5247]/40 has-checked:bg-[#fbf5f3]"
             >
+              <span>{field.label}</span>
               <input
                 id={id}
                 name={field.name}
                 type="checkbox"
                 defaultChecked={record ? Boolean(record[field.name]) : true}
-                className="h-4 w-4 rounded accent-[#9c5247]"
+                className="peer sr-only"
               />
-              <span>{field.label}</span>
+              <span
+                aria-hidden="true"
+                className="relative h-6 w-11 shrink-0 rounded-full bg-stone-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-[#9c5247] peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-[#9c5247]/40 peer-focus-visible:ring-offset-2"
+              />
             </label>
           );
         }
@@ -166,20 +175,19 @@ export function ManagedCollection({
     <div className="space-y-6">
       {/* ── Top Create Card ── */}
       <AdminCard className="p-5 sm:p-6 rounded-2xl border border-stone-200/90 bg-white shadow-2xs">
-        <h2 className="mb-4 text-base font-bold text-stone-900 font-sans">
+        <h2 className="mb-6 flex items-center gap-3 border-b border-stone-100 pb-4 text-base font-bold text-stone-900 font-sans">
+          <span className="h-5 w-1 rounded-full bg-[#9c5247]" aria-hidden="true" />
           {createLabel}
         </h2>
-        <form action={saveAction}>
+        <ManagedSaveForm
+          action={saveAction as SaveAction}
+          successMessage={`${collectionLabel} added successfully.`}
+          resetOnSuccess
+          submitLabel={createLabel}
+          submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl border-2 border-[#9c5247] bg-[#fbf5f3] px-5 text-xs font-bold text-[#7f2d22] shadow-2xs hover:bg-[#f4e7e4] hover:border-[#7f2016] hover:text-[#5c160f] transition active:scale-95 cursor-pointer"
+        >
           <Editor fields={fields} />
-          <div className="mt-5 flex justify-end">
-            <button
-              type="submit"
-              className="inline-flex min-h-10 items-center justify-center rounded-xl border-2 border-[#9c5247] bg-[#fbf5f3] px-5 text-xs font-bold text-[#7f2d22] shadow-2xs hover:bg-[#f4e7e4] hover:border-[#7f2016] hover:text-[#5c160f] transition active:scale-95 cursor-pointer"
-            >
-              {createLabel}
-            </button>
-          </div>
-        </form>
+        </ManagedSaveForm>
       </AdminCard>
 
       {/* ── Existing Records List ── */}
@@ -229,34 +237,29 @@ export function ManagedCollection({
                   </div>
 
                   {/* Card Edit Form */}
-                  <form action={saveAction} className="p-5 sm:p-6">
-                    <input type="hidden" name="id" value={String(record.id)} />
-                    <Editor fields={fields} record={record} />
-                    <div className="mt-5 flex justify-end gap-2">
-                      <button
-                        type="submit"
-                        aria-label={`Update ${info.title}`}
-                        className="inline-flex min-h-10 items-center justify-center rounded-xl border-2 border-[#9c5247] bg-[#fbf5f3] px-4 text-xs font-bold text-[#7f2d22] shadow-2xs hover:bg-[#f4e7e4] hover:border-[#7f2016] hover:text-[#5c160f] transition active:scale-95 cursor-pointer"
-                      >
-                        Save changes
-                      </button>
-                    </div>
-                  </form>
-
-                  {/* Card Delete Row */}
-                  <form
-                    action={deleteAction}
-                    className="border-t border-stone-100 bg-stone-50/40 px-5 py-3 text-right"
+                  <ManagedSaveForm
+                    action={saveAction as SaveAction}
+                    successMessage={`${collectionLabel} updated successfully.`}
+                    className="p-5 sm:p-6"
+                    submitLabel="Save changes"
+                    submitAriaLabel={`Update ${info.title}`}
+                    submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl border-2 border-[#9c5247] bg-[#fbf5f3] px-4 text-xs font-bold text-[#7f2d22] shadow-2xs hover:bg-[#f4e7e4] hover:border-[#7f2016] hover:text-[#5c160f] transition active:scale-95 cursor-pointer"
                   >
                     <input type="hidden" name="id" value={String(record.id)} />
-                    <button
-                      type="submit"
-                      aria-label={`Delete ${info.title}`}
-                      className="rounded-lg px-2.5 py-1 text-xs font-bold text-red-600 hover:text-red-800 hover:bg-red-50 transition cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </form>
+                    <Editor fields={fields} record={record} />
+                  </ManagedSaveForm>
+
+                  {/* Card Delete Row */}
+                  <div className="border-t border-stone-100 bg-stone-50/40 px-5 py-3 text-right">
+                    <ConfirmDeleteButton
+                      action={deleteAction as SaveAction}
+                      id={String(record.id)}
+                      confirmMessage={`Delete "${info.title}"? This cannot be undone.`}
+                      successMessage={`${collectionLabel} deleted.`}
+                      label="Delete"
+                      className="rounded-lg px-2.5 py-1 text-xs font-bold text-red-600 hover:text-red-800 hover:bg-red-50 transition cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                    />
+                  </div>
                 </AdminCard>
               </li>
             );

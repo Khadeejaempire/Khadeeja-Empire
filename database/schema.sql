@@ -267,7 +267,7 @@ create table if not exists hero_slides (
 );
 
 create table if not exists instagram_posts (
-  id text primary key,
+  id text primary key default gen_random_uuid()::text,
   caption text,
   hashtags text[] not null default '{}',
   short_code text,
@@ -277,6 +277,7 @@ create table if not exists instagram_posts (
   video text,
   timestamp text,
   active boolean not null default true,
+  show_on_home boolean not null default true,
   sort_order integer not null default 0
 );
 

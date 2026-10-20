@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ConflictError, DataProviderError, NotFoundError } from "../admin/errors";
 import type {
@@ -695,7 +697,7 @@ export class SupabaseDataProvider implements DataProvider {
   }
 
   createInstagramPost(input: InstagramPostMutationInput) {
-    return this.insertRow<InstagramPostRecord>("instagram_posts", { ...input, active: input.active ?? true }, "Could not create Instagram post.");
+    return this.insertRow<InstagramPostRecord>("instagram_posts", { ...input, id: randomUUID(), active: input.active ?? true }, "Could not create Instagram post.");
   }
 
   updateInstagramPost(postId: string, input: Partial<InstagramPostMutationInput>) {

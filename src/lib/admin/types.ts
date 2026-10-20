@@ -368,6 +368,7 @@ export interface InstagramPostRecord {
   video?: string | null;
   timestamp?: string | null;
   active?: boolean | null;
+  showOnHome?: boolean | null;
   sortOrder?: number | null;
 }
 
@@ -611,6 +612,7 @@ export interface InstagramPostMutationInput {
   video?: string | null;
   timestamp?: string | null;
   active?: boolean | null;
+  showOnHome?: boolean | null;
   sortOrder?: number | null;
 }
 

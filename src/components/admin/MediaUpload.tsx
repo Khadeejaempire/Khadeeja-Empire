@@ -45,6 +45,8 @@ export function MediaUpload({
     };
   }, [lightboxOpen]);
 
+  const isVideo = /\.(mp4|webm|ogv|mov)$/.test(value.toLowerCase()) || value.includes("/video/upload/");
+
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -90,8 +92,8 @@ export function MediaUpload({
         <div className="flex flex-col gap-1.5">
           <div
             onClick={() => setLightboxOpen(true)}
-            className={`group relative cursor-pointer ${aspectClassName} w-full max-w-[240px] max-h-52 overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center shadow-2xs transition hover:border-[#9c5247]/60`}
-            title="Click to view full image on black background"
+            className={`group relative cursor-pointer ${aspectClassName} w-full max-w-60 overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 flex items-center justify-center shadow-sm ring-1 ring-black/5 transition hover:border-[#9c5247]/60 hover:shadow-md`}
+            title={`Click to view full ${isVideo ? "video" : "image"} on black background`}
           >
             {value.toLowerCase().match(/\.(mp4|webm|ogv|mov)$/) || value.includes("/video/upload/") ? (
               <video src={value} className="h-full w-full object-contain pointer-events-none" />
@@ -106,7 +108,7 @@ export function MediaUpload({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              View Full Image
+              {isVideo ? "View Full Video" : "View Full Image"}
             </div>
 
             <button
@@ -134,13 +136,13 @@ export function MediaUpload({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              View Full Image
+              {isVideo ? "View Full Video" : "View Full Image"}
             </button>
           </div>
         </div>
       ) : null}
 
-      <div className="flex min-h-11 w-full flex-wrap items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2">
+      <div className="flex min-h-11 w-full flex-wrap items-center gap-2 rounded-xl border border-dashed border-stone-300 bg-stone-50/60 px-3 py-2 transition hover:border-[#9c5247]/60 hover:bg-[#fbf5f3]/60">
         {value ? (
           <span className="min-w-0 flex-1 truncate text-sm text-stone-900" title={value}>
             {value.split("/").pop()}

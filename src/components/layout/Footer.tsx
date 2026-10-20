@@ -136,6 +136,11 @@ export function Footer({ categories }: { categories: Category[] }) {
                 </Link>
               </li>
               <li>
+                <Link href="/gallery" className="hover:text-[#b89565] transition-colors">
+                  Gallery
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-[#b89565] transition-colors">
                   Contact
                 </Link>
