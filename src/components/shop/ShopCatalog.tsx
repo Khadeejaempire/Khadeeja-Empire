@@ -54,6 +54,7 @@ interface ShopCatalogProps {
   categoryGroups?: Record<string, string[]>;
   initialCategory?: string;
   titleOverride?: string;
+  descriptionOverride?: string;
   priceUnder?: number;
   filterSettings?: ShopFilterSettings;
 }
@@ -76,6 +77,7 @@ export function ShopCatalog({
   categoryGroups,
   initialCategory,
   titleOverride,
+  descriptionOverride,
   priceUnder,
   filterSettings,
 }: ShopCatalogProps) {
@@ -104,6 +106,13 @@ export function ShopCatalog({
   // Filters State
   const [selectedTab, setSelectedTab] = useState<string>(initialCategory || "all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // Admin-written category description, following the category tab currently selected.
+  const categoryDescription = useMemo(() => {
+    if (selectedTab === "all") return "";
+    const fromCategory = categories.find((category) => category.slug === selectedTab)?.description?.trim();
+    if (fromCategory) return fromCategory;
+    return selectedTab === initialCategory ? descriptionOverride?.trim() ?? "" : "";
+  }, [categories, selectedTab, initialCategory, descriptionOverride]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState<number>(
     priceUnder ?? maxPriceLimit
@@ -616,6 +625,12 @@ export function ShopCatalog({
             </button>
           </div>
         </div>
+
+        {categoryDescription && (
+          <p className="whitespace-pre-line text-sm leading-relaxed text-muted sm:text-[15px]">
+            {categoryDescription}
+          </p>
+        )}
       </div>
 
       {/* 2. Horizontal Category Filter Tabs + Grid Toggle Bar */}

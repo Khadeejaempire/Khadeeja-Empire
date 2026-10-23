@@ -94,6 +94,7 @@ export default async function CollectionPage({ params }: PageProps) {
           categoryGroups={categoryGroups}
           initialCategory={slug}
           titleOverride={displayName}
+          descriptionOverride={collectionRecord?.description ?? categoryRecord?.description ?? undefined}
           filterSettings={filterSettings}
         />
       </Container>
